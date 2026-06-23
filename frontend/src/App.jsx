@@ -1,4 +1,3 @@
-// src/App.jsx
 import "./index.css";
 import ThemeToggle from "./components/ThemeToggle";
 import ThemeDropdown from "./components/ThemeDropdown";
@@ -8,6 +7,8 @@ function App() {
   const { 
     currentMode, 
     currTheme, 
+    currLightTheme, // 👈 Grab this
+    currDarkTheme,  // 👈 Grab this
     toggleMode, 
     lightThemes, 
     darkThemes, 
@@ -17,7 +18,6 @@ function App() {
   return (
     <div className="relative min-h-screen w-full bg-base-100 text-base-content transition-colors duration-300">
       
-      {/* 🚀 Container for our modular theme controls */}
       <div className="fixed top-4 right-4 z-50 flex gap-2">
         <ThemeToggle 
           currentMode={currentMode} 
@@ -26,6 +26,8 @@ function App() {
         <ThemeDropdown 
           lightThemes={lightThemes} 
           darkThemes={darkThemes} 
+          currLightTheme={currLightTheme} // 👈 Pass it down
+          currDarkTheme={currDarkTheme}   // 👈 Pass it down
           updatePreference={updatePreference} 
         />
       </div>

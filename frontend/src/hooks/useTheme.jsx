@@ -1,52 +1,39 @@
 import { useState, useEffect } from "react";
 
-const lightThemes = ["bumblebee", "cupcake", "emerald", "retro"];
-const darkThemes = ["halloween", "synthwave", "cyberpunk", "night"];
+// 🎨 All DaisyUI Themes categorized
+const lightThemes = [
+  "light", "cupcake", "bumblebee", "emerald", "corporate", "retro", 
+  "cyberpunk", "valentine", "garden", "lofi", "pastel", "fantasy", 
+  "wireframe", "cmyk", "autumn", "acid", "lemonade", "winter", "nord", "caramellatte"
+];
 
-// Temporary mock function for your testing
+const darkThemes = [
+  "dark", "synthwave", "halloween", "forest", "aqua", "black", 
+  "luxury", "dracula", "business", "night", "coffee", "dim", "abyss", "silk"
+];
+
+// Mock function for your testing
 function ispro() {
-  return true;
+  return false; // Set to false to test the free tier
 }
+
+// src/hooks/useTheme.jsx
+
+// ... (Keep your lightThemes and darkThemes arrays the same as before)
 
 export function useTheme() {
   const [currLightTheme, setCurrLightTheme] = useState(lightThemes[0]);
   const [currDarkTheme, setCurrDarkTheme] = useState(darkThemes[0]);
-  const [currTheme, setCurrTheme] = useState(darkThemes[0]);
   const [currentMode, setCurrentMode] = useState("dark");
+  const [currTheme, setCurrTheme] = useState(darkThemes[0]);
 
-  // Load themes on initial mount
-  useEffect(() => {
-    const savedLight = localStorage.getItem("preferred_light_theme");
-    const savedDark = localStorage.getItem("preferred_dark_theme");
-    const lastUsedMode = localStorage.getItem("last_used_mode") || "dark";
+  // ... (Keep your initial useEffect hook for localStorage the same)
 
-    let resolvedLight = lightThemes[0];
-    let resolvedDark = darkThemes[0];
-
-    if (ispro()) {
-      if (savedLight && lightThemes.includes(savedLight)) {
-        resolvedLight = savedLight;
-      }
-      if (savedDark && darkThemes.includes(savedDark)) {
-        resolvedDark = savedDark;
-      }
-    } else {
-      localStorage.setItem("preferred_light_theme", lightThemes[0]);
-      localStorage.setItem("preferred_dark_theme", darkThemes[0]);
-    }
-
-    setCurrLightTheme(resolvedLight);
-    setCurrDarkTheme(resolvedDark);
-    setCurrentMode(lastUsedMode);
-    setCurrTheme(lastUsedMode === "light" ? resolvedLight : resolvedDark);
-  }, []);
-
-  // Sync the theme string with the HTML document attribute (DaisyUI/Tailwind style)
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", currTheme);
   }, [currTheme]);
 
-  // Expose an easy function to switch light/dark modes
+  // Regular button toggle (Flipped between saved preferences)
   const toggleMode = () => {
     const nextMode = currentMode === "light" ? "dark" : "light";
     const nextTheme = nextMode === "light" ? currLightTheme : currDarkTheme;
@@ -56,16 +43,22 @@ export function useTheme() {
     localStorage.setItem("last_used_mode", nextMode);
   };
 
-  // Expose an easy function to update a specific light/dark preference selection
+  // 🔥 UPDATED: Now automatically updates mode and active theme string on dropdown click
   const updatePreference = (modeType, themeName) => {
     if (modeType === "light" && lightThemes.includes(themeName)) {
       setCurrLightTheme(themeName);
+      setCurrentMode("light"); // 👈 Automatically switch toggle emoji to ☀️
+      setCurrTheme(themeName);  // 👈 Instantly apply UI theme
+      
       localStorage.setItem("preferred_light_theme", themeName);
-      if (currentMode === "light") setCurrTheme(themeName);
+      localStorage.setItem("last_used_mode", "light");
     } else if (modeType === "dark" && darkThemes.includes(themeName)) {
       setCurrDarkTheme(themeName);
+      setCurrentMode("dark");  // 👈 Automatically switch toggle emoji to 🌙
+      setCurrTheme(themeName);   // 👈 Instantly apply UI theme
+      
       localStorage.setItem("preferred_dark_theme", themeName);
-      if (currentMode === "dark") setCurrTheme(themeName);
+      localStorage.setItem("last_used_mode", "dark");
     }
   };
 
