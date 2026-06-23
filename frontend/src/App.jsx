@@ -1,20 +1,27 @@
-import React from "react";
+import "./index.css";
+import ThemeToggle from "./components/ThemeToggle";
+import { useTheme } from "./hooks/useTheme";
 
-export default function ThemeToggle({ currentMode, toggleMode }) {
-  // Determine if the current mode is dark
-  const isDark = currentMode === "dark";
+function App() {
+  const { currentMode, toggleMode } = useTheme();
 
   return (
-    <button
-      onClick={toggleMode}
-      className={`w-14 h-14 rounded-full text-2xl flex items-center justify-center border shadow-md transition-all duration-300 hover:scale-110 focus:outline-none
-        ${isDark 
-          ? "bg-neutral border-neutral-focus text-neutral-content" 
-          : "bg-base-200 border-base-300 text-base-content"
-        }`}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-    >
-      {isDark ? "🌙" : "☀️"}
-    </button>
+    // Added relative positioning, full width, and full viewport height
+    <div className="relative min-h-screen w-full bg-base-100 text-base-content">
+      
+      {/* Container forced to the absolute viewport top-right */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle currentMode={currentMode} toggleMode={toggleMode} />
+      </div>
+
+      {/* Main app content goes here */}
+      <main className="p-8">
+        <h1 className="text-3xl font-bold">Welcome to my App</h1>
+        <p className="mt-2">The current mode is: <strong>{currentMode}</strong></p>
+      </main>
+
+    </div>
   );
 }
+
+export default App;
