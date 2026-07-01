@@ -5,11 +5,11 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 
 const connectionString = `${process.env.DATABASE_URL}`;
 
-// const adapter = new PrismaPg({ connectionString });
-const adapter = new PrismaNeon(
-  { connectionString: process.env.DATABASE_URL! },
-  { schema: 'myPostgresSchema' }
-)
+const adapter = new PrismaPg({ connectionString });
+// const adapter = new PrismaNeon(
+//   { connectionString: process.env.DATABASE_URL! },
+//   { schema: 'myPostgresSchema' }
+// )
 const prisma = new PrismaClient({ adapter });
 
 export { prisma };

@@ -1,10 +1,10 @@
 import express from 'express';
-import { register, login } from '../controllers/authControllers.js';
+import * as authController from '../controllers/authControllers.js';
 
-const router = express.Router();
+const authRouter = express.Router();
 
 // Express automatically passes the (req, res) objects into these controller functions
-router.post('/register', register);
-router.post('/login', login);
+authRouter.post('/register', authController.register);
+// authRouter.post('/login', authController.login);
 
-export default router;
+export default authRouter;
