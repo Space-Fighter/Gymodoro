@@ -18,14 +18,25 @@ export async function register(req, res){
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await prisma.user.create({data: { name, email, password: hashedPassword },});
-    const token = jwt.sign({ id: newUser.id }, JWT_SECRET, { expiresIn: "1d" });
-    res.status(201).json({ message: 'User registered sucessfully 🎉🎉🎉!', user: { id: newUser.id, email: newUser.email }, token });
+    const acessToken = jwt.sign({ id: newUser.id }, JWT_SECRET, { expiresIn: "15m" });
+    const refreshToken = jwt.sign({ id: newUser.id }, JWT_SECRET, { expiresIn: "7d" });
+    res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7 days in milliseconds
+    res.status(201).json({ message: 'User registered sucessfully 🎉🎉🎉!', user: { id: newUser.id, email: newUser.email }, token: acessToken });
   } 
   catch (error) {
     console.log(error);
     res.status(500).json({ error: 'Registration failed.' });
   }
 };
+
+export async function getMe(req, res) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ message: 'Token not found/provided.' });
+  }
+  const decoded = jwt.verify(token, JWT_SECRET); // decoded = { id: 'user_id', iat: initialized at timestamp, exp: expired at timestamp }
+  console.log("Decoded token:", decoded);
+}
 
 /*
 export const login = async (req: Request, res: Response): Promise<any> => {
