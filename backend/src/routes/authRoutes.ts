@@ -6,6 +6,7 @@ const authRouter = express.Router();
 // Express automatically passes the (req, res) objects into these controller functions
 authRouter.post('/register', authController.register);
 authRouter.post('/get-me', authController.getMe);
+authRouter.post('/refresh-token', authController.refreshToken); // Assuming you have a refreshToken controller function
 // authRouter.post('/login', authController.login);
 
 export default authRouter;

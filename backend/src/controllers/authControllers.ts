@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { json, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../../lib/prisma.js';
@@ -21,7 +21,7 @@ export async function register(req, res){
     const acessToken = jwt.sign({ id: newUser.id }, JWT_SECRET, { expiresIn: "15m" });
     const refreshToken = jwt.sign({ id: newUser.id }, JWT_SECRET, { expiresIn: "7d" });
     res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7 days in milliseconds
-    res.status(201).json({ message: 'User registered sucessfully 🎉🎉🎉!', user: { id: newUser.id, email: newUser.email }, token: acessToken });
+    res.status(201).json({ message: 'User registered sucessfully 🎉🎉🎉!', user: { id: newUser.id, email: newUser.email }, acessToken: acessToken });
   } 
   catch (error) {
     console.log(error);
@@ -38,6 +38,17 @@ export async function getMe(req, res) {
   console.log("Decoded token:", decoded);
 }
 
+export async function refreshToken(req, res) {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) {
+    return res.status(401).json({ message: 'Refresh token not found.' });
+  }
+  const decoded = jwt.verify(refreshToken, JWT_SECRET);
+  const newAccessToken = jwt.sign({ id: decoded.id }, JWT_SECRET, { expiresIn: '15m' });
+  const newRefreshToken = jwt.sign({ id: decoded.id }, JWT_SECRET, { expiresIn: '7d' });
+  res.cookie('refreshToken', newRefreshToken, { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7 days in milliseconds
+  res.status(200).json({ message: 'Access token and Refresh token refreshed successfully.', accessToken: newAccessToken });
+}
 /*
 export const login = async (req: Request, res: Response): Promise<any> => {
   try {
