@@ -16,7 +16,18 @@ model User {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
-  password  String
+
+  // Optional now: Google-only accounts have no password.
+  password  String?
+
+  // Email verification
+  emailVerified            Boolean   @default(false)
+  verificationToken        String?   @unique
+  verificationTokenExpiry  DateTime?
+
+  // Google OAuth
+  googleId  String?  @unique
+
   createdAt DateTime @default(now())
 
   refreshTokens RefreshToken[]
