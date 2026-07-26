@@ -18,6 +18,7 @@ if (!JWT_SECRET) {
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 const VERIFICATION_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const RESEND_VERIFICATION_COOLDOWN_MS = 60 * 1000; // 1 minute
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 if (!GOOGLE_CLIENT_ID) {
@@ -183,6 +184,62 @@ export async function verifyEmail(req: Request, res: Response) {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Email verification failed.' });
+  }
+}
+
+export async function resendVerificationEmail(req: Request, res: Response) {
+  // Same response for "no such user", "already verified", and "link sent",
+  // so this endpoint can't be used to probe which emails have accounts.
+  const genericResponse = {
+    message: "If an account exists for this email and isn't verified yet, a new link has been sent.",
+  };
+
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user || user.emailVerified) {
+      return res.status(200).json(genericResponse);
+    }
+
+    // No dedicated "last sent at" column — the existing expiry encodes it,
+    // since it's always set to (issue time + VERIFICATION_TOKEN_EXPIRY_MS).
+    if (user.verificationTokenExpiry) {
+      const lastIssuedAt = user.verificationTokenExpiry.getTime() - VERIFICATION_TOKEN_EXPIRY_MS;
+      if (Date.now() - lastIssuedAt < RESEND_VERIFICATION_COOLDOWN_MS) {
+        // Only branch that isn't generic. It reveals nothing to a third
+        // party — you'd already have to be resending for this address.
+        return res.status(429).json({ message: 'Please wait before requesting another email.' });
+      }
+    }
+
+    const rawVerificationToken = crypto.randomBytes(32).toString('hex');
+
+    // Overwriting invalidates whatever link was sent previously.
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationToken: hashToken(rawVerificationToken),
+        verificationTokenExpiry: new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_MS),
+      },
+    });
+
+    try {
+      await sendVerificationEmail(user.email, rawVerificationToken);
+    } catch (mailErr) {
+      // Log and still return the generic response — a failing SMTP provider
+      // shouldn't surface as a 500 here either.
+      console.error('Failed to resend verification email:', mailErr);
+    }
+
+    res.status(200).json(genericResponse);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to resend verification email.' });
   }
 }
 

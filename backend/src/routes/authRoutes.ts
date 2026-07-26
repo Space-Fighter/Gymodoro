@@ -9,6 +9,7 @@ authRouter.post('/login', authController.login);
 authRouter.post('/google', authController.googleLogin);
 authRouter.post('/refresh-token', authController.refreshToken);
 authRouter.post('/logout', authController.logout);
+authRouter.post('/resend-verification', authController.resendVerificationEmail);
 
 authRouter.get('/get-me', authController.getMe);
 authRouter.get('/verify-email', authController.verifyEmail);
