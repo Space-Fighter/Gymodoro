@@ -198,7 +198,12 @@ export async function verifyEmail(req: Request, res: Response) {
 
 export async function resendVerificationEmail(req: Request, res: Response) {
   // Same response for "no such user", "already verified", and "link sent",
-  // so this endpoint can't be used to probe which emails have accounts.
+  /*
+  a standardized genericResponse object. This is an anti-enumeration defense. 
+  By returning this exact same message whether the email exists, doesn't exist, 
+  or is already verified, an attacker cannot use this API to discover 
+  which email addresses have accounts in your database
+  */
   const genericResponse = {
     message: "If an account exists for this email and isn't verified yet, a new link has been sent.",
   };
@@ -240,9 +245,13 @@ export async function resendVerificationEmail(req: Request, res: Response) {
     try {
       await sendVerificationEmail(user.email, rawVerificationToken);
     } catch (mailErr) {
-      // Log and still return the generic response — a failing SMTP provider
-      // shouldn't surface as a 500 here either.
+      // Unlike register(), a resend that fails to dispatch has nothing to
+      // fall back on — surface it so the user knows to retry, rather than
+      // claiming success on an email that never went out.
       console.error('Failed to resend verification email:', mailErr);
+      return res.status(500).json({
+        message: 'We encountered an issue sending the email. Please try again in a few moments.',
+      });
     }
 
     res.status(200).json(genericResponse);
