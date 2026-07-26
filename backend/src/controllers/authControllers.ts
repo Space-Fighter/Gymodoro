@@ -131,21 +131,24 @@ export async function register(req: Request, res: Response) {
       },
     });
 
+    let emailSent = true;
     try {
       await sendVerificationEmail(email, rawVerificationToken);
     } catch (mailErr) {
       // Don't fail registration just because the email didn't send —
-      // log it and let the user request a resend later.
+      // log it and tell the user to use the resend button.
+      emailSent = false;
       console.error('Failed to send verification email:', mailErr);
     }
 
-    const accessToken = signAccessToken(newUser.id);
-    await issueRefreshToken(newUser.id, res);
-
+    // Hard wall: no access token, no refresh cookie until the email is
+    // verified. The user has to come back through /login after verifying.
     res.status(201).json({
-      message: 'User registered successfully. Please check your email to verify your account.',
+      message: emailSent
+        ? 'User registered successfully. Please check your email to verify your account before logging in.'
+        : 'Account created, but we could not send the verification email. Please use the "Resend Email" button to try again.',
+      emailSent,
       user: { id: newUser.id, email: newUser.email, emailVerified: newUser.emailVerified },
-      accessToken,
     });
   } catch (error) {
     console.error(error);
@@ -155,22 +158,28 @@ export async function register(req: Request, res: Response) {
 
 export async function verifyEmail(req: Request, res: Response) {
   try {
-    const { token } = req.query;
+    // When the user clicks the email link, they go to a URL like http://localhost:3000/verify-email?token=abc123. 
+    // The req.query object grabs variables from the URL, so this line pulls out "abc123".
+    const { token } = req.query; 
     if (!token || typeof token !== 'string') {
       return res.status(400).json({ message: 'Verification token is required.' });
     }
-
+    /*
+    Prisma's findFirst() method returns one of two things:
+    1. If found: It returns the entire User object from your database.
+    2. If not found: It returns null.
+    */
     const user = await prisma.user.findFirst({
       where: {
         verificationToken: hashToken(token),
         verificationTokenExpiry: { gt: new Date() },
       },
     });
-
+    // If user is null, that means either the token was invalid or it expired. In either case, we return a 400 error with a message.
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired verification token.' });
     }
-
+    // Else we update the user's record to mark their email as verified and clear the token and expiry fields.
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -269,10 +278,15 @@ export async function login(req: Request, res: Response) {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
 
-    // Optional: block unverified accounts from logging in.
-    // if (!user.emailVerified) {
-    //   return res.status(403).json({ message: 'Please verify your email before logging in.' });
-    // }
+    // Hard wall: unverified accounts get no tokens at all. Checked after
+    // the password compare so a wrong password still reads as 401 rather
+    // than confirming the account exists.
+    if (!user.emailVerified) {
+      return res.status(403).json({
+        message: 'Please verify your email before logging in. Check your inbox for the verification link.',
+        emailVerified: false,
+      });
+    }
 
     const accessToken = signAccessToken(user.id);
     await issueRefreshToken(user.id, res);
