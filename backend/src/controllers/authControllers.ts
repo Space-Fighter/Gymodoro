@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../../lib/prisma.js';
+import { GYMODORO_LOGO_BASE64 } from '../emailAssets.js';
 
 // --- Config -----------------------------------------------------------
 
@@ -16,6 +17,9 @@ if (!JWT_SECRET) {
 }
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+// verify-email is a backend JSON endpoint with no frontend page behind it,
+// so its link must point at the API origin, not CLIENT_URL (the frontend).
+const API_URL = process.env.API_URL || 'http://localhost:3000';
 const VERIFICATION_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const RESEND_VERIFICATION_COOLDOWN_MS = 60 * 1000; // 1 minute
@@ -88,14 +92,57 @@ async function issueRefreshToken(userId: string, res: Response) {
 }
 
 async function sendVerificationEmail(email: string, rawToken: string) {
-  const link = `${CLIENT_URL}/verify-email?token=${rawToken}`;
+  const link = `${API_URL}/api/auth/verify-email?token=${rawToken}`;
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || '"No Reply" <no-reply@example.com>',
     to: email,
     subject: 'Verify your email',
-    html: `<p>Welcome! Please verify your email by clicking the link below:</p>
-           <p><a href="${link}">${link}</a></p>
-           <p>This link expires in 24 hours.</p>`,
+    html: `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;padding:40px;font-family:Arial,Helvetica,sans-serif;">
+              <tr>
+                <td align="center" style="font-size:20px;font-weight:700;color:#111111;padding-bottom:8px;">
+                  Welcome to Gymodoro
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="font-size:14px;color:#444444;padding-bottom:28px;">
+                  Please verify your email address to activate your account.
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding-bottom:28px;">
+                  <a href="${link}"
+                     style="display:inline-block;background-color:#000000;color:#ffffff;font-weight:700;
+                            font-size:16px;letter-spacing:0.3px;text-decoration:none;
+                            padding:14px 32px;border-radius:8px;">
+                    Verify Email
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding-bottom:28px;">
+                  <img src="cid:gymodoro-logo" alt="Gymodoro" width="500" style="display:block;" />
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="font-size:12px;color:#888888;">
+                  This link expires in 24 hours. If you didn't create a Gymodoro account, you can ignore this email.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>`,
+    attachments: [
+      {
+        filename: 'gymodoro-logo.png',
+        content: Buffer.from(GYMODORO_LOGO_BASE64, 'base64'),
+        cid: 'gymodoro-logo',
+      },
+    ],
   });
 }
 
@@ -406,7 +453,7 @@ export async function refreshToken(req: Request, res: Response) {
   try {
     const incomingToken = req.cookies.refreshToken;
     if (!incomingToken) {
-      return res.status(401).json({ message: 'Refresh token not found.' });
+      return res.status(401).json({ message: 'Refresh token not found.' }); // if no refresh token is present, the user is not logged in
     }
 
     // 1. Verify signature + expiry of the JWT itself.
