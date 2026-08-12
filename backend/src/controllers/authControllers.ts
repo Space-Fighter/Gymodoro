@@ -11,10 +11,14 @@ import { GYMODORO_LOGO_BASE64 } from '../emailAssets.js';
 
 // Don't silently fall back to a known default secret — that makes the
 // "fatal error" check below pointless, since JWT_SECRET is never falsy.
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
+const rawJwtSecret = process.env.JWT_SECRET;
+if (!rawJwtSecret) {
   throw new Error('⚠️☠️ FATAL ERROR: JWT_SECRET is not defined in .env ☠️⚠️');
 }
+// Re-assigned with an explicit `string` type: TS narrows `rawJwtSecret` to
+// `string` right after the check above, but that narrowing doesn't survive
+// inside functions defined later in this file — this constant carries it.
+const JWT_SECRET: string = rawJwtSecret;
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 // verify-email is a backend JSON endpoint with no frontend page behind it,

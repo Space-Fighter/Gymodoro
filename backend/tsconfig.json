@@ -17,7 +17,9 @@
     "strict": true,
     "esModuleInterop": true,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "skipLibCheck": true
-  }
+  },
+  "include": ["src/**/*.ts", "lib/**/*.ts", "generated/**/*.ts"],
+  "exclude": ["node_modules", "dist", "script.ts", "prisma.config.ts"]
 }
