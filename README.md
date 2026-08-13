@@ -2,6 +2,16 @@
 
 A two-part pomodoro timer application with authentication. Built with React, TypeScript, Tailwind CSS, and Express.
 
+## Proposed Features
+
+- Pomodoro work/break timer (25 min work / 5 min break)
+- Exercise suggestion during breaks
+- Session/pomodoro history tracking
+- Chrome extension: AI-based distraction blocker (classifies page content as focus vs. distracting, not a static blocklist)
+- "Convince the bot" — persuasion-based override to temporarily unblock a distracting site
+- Distraction time analyser — finds a user's most-focused vs. most-distracted hours from browsing/session data, recommends work scheduling and suggests exercise/socializing/chores during distracted hours, plus overall analytics
+- Voice task capture — dictate ad-hoc tasks, LLM parses/prioritizes them and slots them into the schedule
+
 ## Project Overview
 
 Gymodoro is a monorepo with two independent Node projects:
