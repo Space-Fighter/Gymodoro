@@ -43,3 +43,70 @@ model RefreshToken {
   updatedAt   DateTime @updatedAt
   expireAt    DateTime
 }
+
+model Exercise {
+  id               String   @id @default(uuid())
+  name             String   @unique
+  description      String
+  difficulty       String // "easy" | "medium" | "hard"
+  videoUrl         String?
+  gifUrl           String?
+  muscleDiagramUrl String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  muscleGroups  ExerciseMuscleGroup[]
+  equipment     ExerciseEquipment[]
+  exerciseTypes ExerciseExerciseType[]
+}
+
+model MuscleGroup {
+  id   String @id @default(uuid())
+  name String @unique
+
+  exercises ExerciseMuscleGroup[]
+}
+
+model Equipment {
+  id   String @id @default(uuid())
+  name String @unique
+
+  exercises ExerciseEquipment[]
+}
+
+model ExerciseType {
+  id   String @id @default(uuid())
+  name String @unique
+
+  exercises ExerciseExerciseType[]
+}
+
+model ExerciseMuscleGroup {
+  id            String      @id @default(uuid())
+  exerciseId    String
+  exercise      Exercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  muscleGroupId String
+  muscleGroup   MuscleGroup @relation(fields: [muscleGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, muscleGroupId])
+}
+
+model ExerciseEquipment {
+  id          String    @id @default(uuid())
+  exerciseId  String
+  exercise    Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, equipmentId])
+}
+
+model ExerciseExerciseType {
+  id             String       @id @default(uuid())
+  exerciseId     String
+  exercise       Exercise     @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  exerciseTypeId String
+  exerciseType   ExerciseType @relation(fields: [exerciseTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, exerciseTypeId])
+}
