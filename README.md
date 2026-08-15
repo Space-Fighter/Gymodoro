@@ -170,6 +170,57 @@ You should see the Gymodoro app. Register a new account to get started!
 
 ---
 
+## Running the Frontend
+
+The Gymodoro frontend is built with **Vite**, **React 19**, **TypeScript**, **Tailwind CSS v4**, and **shadcn/ui**.
+
+### 1. Prerequisites
+- **Node.js** v18+ (check with `node --version`)
+- **npm** v9+ (check with `npm --version`)
+
+### 2. Step-by-Step Instructions
+
+1. **Navigate to the frontend folder**:
+   ```bash
+   cd frontend
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Start the local development server**:
+   ```bash
+   npm run dev
+   ```
+
+4. **Open in browser**:
+   Open [http://localhost:5173](http://localhost:5173) in your web browser.
+
+### 3. Available Application Routes
+- **`/` or `/welcome`** — Main Gymodoro landing page featuring the active-break marquee, interactive loop showcase, 3D timer mockup, voice AI simulator, and feature pillars.
+- **`/signin`** — Sign In page with email/password and Google/Apple OAuth options.
+- **`/signup`** — Sign Up page to register a new account.
+- **`/home`** — Dashboard & session timer view.
+
+### 4. Available Frontend Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the Vite development server on `http://localhost:5173` with Hot Module Replacement (HMR) |
+| `npm run build` | Run TypeScript type-checking (`tsc -b`) and compile production bundle into `dist/` |
+| `npm run lint` | Run ESLint over all `.ts` and `.tsx` source files |
+| `npm run preview` | Preview the production build locally |
+
+### 5. UI Features & Controls
+- **Light & Dark Theme Toggle**: Click the theme toggle icon (`☾` / `☀`) in the top navigation bar to switch between dark and light modes. Your preference is persisted in `localStorage` under `gymodoro-theme`.
+- **Interactive Active Breaks Carousel**: Hover over the horizontal active-break cards to pause the infinite scrolling animation and explore break ideas.
+- **The Gymodoro Loop**: Click on any of the 4 steps (`01 Focus`, `02 Move`, `03 Recover`, `04 Repeat`) to see the dynamic orbital diagrams update in real-time.
+- **Voice AI Demo**: Click *"Build my plan →"* in the voice capture section to preview automated task prioritization.
+
+---
+
 ## Available Commands
 
 ### Backend (`cd backend`)
