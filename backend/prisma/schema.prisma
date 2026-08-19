@@ -31,6 +31,7 @@ model User {
   createdAt DateTime @default(now())
 
   refreshTokens RefreshToken[]
+  sessions      Session[]
 }
 
 model RefreshToken {
@@ -43,3 +44,37 @@ model RefreshToken {
   updatedAt   DateTime @updatedAt
   expireAt    DateTime
 }
+
+model Exercise {
+  id             String    @id @default(uuid())
+  name           String
+  description    String
+  category       String
+  difficulty     String
+  duration       Int       @default(300)
+  caloriesBurned Int       @default(20)
+  imageUrl       String?
+  instructions   String?
+  createdAt      DateTime  @default(now())
+
+  sessions       Session[]
+}
+
+model Session {
+  id             String    @id @default(uuid())
+  userId         String
+  User           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workDuration   Int       @default(1500)
+  breakDuration  Int       @default(300)
+  exerciseId     String?
+  Exercise       Exercise? @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  status         String    @default("in_progress")
+  startedAt      DateTime  @default(now())
+  breakStartedAt DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId, startedAt])
+}
+

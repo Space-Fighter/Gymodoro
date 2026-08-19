@@ -1,6 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes.js';
+import sessionRoutes from './routes/sessionRoutes.js';
+import exerciseRoutes from './routes/exerciseRoutes.js';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 
@@ -11,7 +13,12 @@ app.use(express.json());
 app.use(morgan('dev'));
 app.use(cookieParser());
 
-// 🔀 Mount your new auth handlers under /api/auth
+// 🔀 Mount API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/exercises', exerciseRoutes);
 
-app.listen(3000, () => console.log('⚡️ Server running on http://localhost:3000'));
+const server = app.listen(3000, () => console.log('⚡️ Server running on http://localhost:3000'));
+
+export { app, server };
+
