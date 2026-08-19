@@ -49,6 +49,8 @@ async function main() {
     const scalars = {
       description: exercise.description,
       difficulty: exercise.difficulty,
+      mechanic: exercise.mechanic,
+      force: exercise.force,
       videoUrl: exercise.videoUrl,
       gifUrl: exercise.gifUrl,
       muscleDiagramUrl: exercise.muscleDiagramUrl,

@@ -49,6 +49,8 @@ model Exercise {
   name             String   @unique
   description      String
   difficulty       String // "easy" | "medium" | "hard"
+  mechanic         String? // "compound" | "isolation"
+  force            String? // "push" | "pull" | "static"
   videoUrl         String?
   gifUrl           String?
   muscleDiagramUrl String?
