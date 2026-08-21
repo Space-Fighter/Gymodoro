@@ -6,3 +6,6 @@ node_modules
 
 /generated/prisma
 dist
+
+# Local development tools
+.tools/
