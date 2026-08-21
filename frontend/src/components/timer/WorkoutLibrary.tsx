@@ -3,6 +3,7 @@ import { Search, Sliders } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ExerciseType } from "@/types/exercise";
 import { getYoutubeThumbnailUrl } from "@/lib/youtube";
+import TagList from "@/components/timer/TagList";
 
 interface Props {
   exercises: ExerciseType[];
@@ -304,18 +305,7 @@ export default function WorkoutLibrary({
                 {exercise.name}
               </h3>
 
-              <div className="flex flex-wrap gap-1">
-                {exercise.difficulty && (
-                  <span className="px-2 py-1 rounded-full text-xs bg-white/10 text-white">
-                    {exercise.difficulty}
-                  </span>
-                )}
-                {exercise.exerciseTypes?.slice(0, 1).map((type) => (
-                  <span key={type} className="px-2 py-1 rounded-full text-xs bg-white/10 text-white">
-                    {type}
-                  </span>
-                ))}
-              </div>
+              <TagList exercise={exercise} />
             </button>
           );
         })}

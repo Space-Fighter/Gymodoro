@@ -23,6 +23,7 @@ interface AuthContextType {
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<RegisterResult>;
+  resendVerification: (email: string) => Promise<{ message: string }>;
   googleLogin: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -143,6 +144,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const resendVerification = useCallback(async (email: string): Promise<{ message: string }> => {
+    try {
+      setError(null);
+
+      const response = await fetch(`${API_URL}/api/auth/resend-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to resend verification email");
+      }
+
+      return { message: data.message as string };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to resend verification email";
+      setError(message);
+      throw err;
+    }
+  }, []);
+
   const googleLogin = useCallback(async (idToken: string) => {
     try {
       setIsLoading(true);
@@ -220,6 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         error,
         login,
         register,
+        resendVerification,
         googleLogin,
         logout,
         deleteAccount,

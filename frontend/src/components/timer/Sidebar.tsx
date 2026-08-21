@@ -34,7 +34,7 @@ export default function Sidebar({
   return (
     <div
       className={cn(
-        "fixed left-1 top-16 bottom-4 w-68 rounded-3xl",
+        "fixed left-1 top-[106px] bottom-4 w-68 rounded-3xl",
         "bg-black/42 border border-white/15",
         "flex flex-col p-6 gap-2 z-20",
         "transition-all duration-300 ease-in-out",

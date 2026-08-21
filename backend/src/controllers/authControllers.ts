@@ -390,10 +390,22 @@ export async function googleLogin(req: Request, res: Response) {
       // Existing account (e.g. originally registered with a password) —
       // link the Google id if it isn't set yet, and treat the email as
       // verified since Google already confirmed it.
+      //
+      // Security: if this account was never verified, we don't know who set
+      // its password — someone could have pre-registered this email with a
+      // password they control and never verified it, hoping the real owner
+      // would eventually link Google and start using the account while the
+      // attacker's password still works. Clearing the password on first
+      // link closes that hole; it only affects unverified accounts, since a
+      // verified account's owner already proved control of the mailbox.
       if (!user.googleId) {
         user = await prisma.user.update({
           where: { id: user.id },
-          data: { googleId, emailVerified: true },
+          data: {
+            googleId,
+            emailVerified: true,
+            ...(user.emailVerified ? {} : { password: null }),
+          },
         });
       }
     } else {

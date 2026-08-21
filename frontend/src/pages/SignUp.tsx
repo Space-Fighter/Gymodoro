@@ -7,12 +7,27 @@ import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const { register, googleLogin, isLoading, error } = useAuth();
+  const { register, resendVerification, googleLogin, isLoading, error } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
   const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+
+  const handleResend = async () => {
+    setResending(true);
+    setResendMessage(null);
+    try {
+      const result = await resendVerification(email);
+      setResendMessage(result.message);
+    } catch (err) {
+      setResendMessage(err instanceof Error ? err.message : "Failed to resend verification email");
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +99,20 @@ export default function SignUp() {
                 Check your inbox
               </h1>
               <p className="text-sm text-muted-foreground">{verificationMessage}</p>
+
+              {resendMessage && (
+                <p className="text-sm text-emerald-500">{resendMessage}</p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resending}
+                className="w-full py-3 px-4 rounded-lg border border-border hover:border-emerald-500/60 bg-background/50 hover:bg-secondary text-foreground text-sm font-semibold transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {resending ? "Sending..." : "Resend verification email"}
+              </button>
+
               <Link
                 to="/signin"
                 className="inline-block mt-2 text-emerald-500 font-semibold hover:underline"

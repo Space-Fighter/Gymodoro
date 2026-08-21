@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Menu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Menu, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/timer/Sidebar";
 import FocusView from "@/components/timer/FocusView";
 import BreakView from "@/components/timer/BreakView";
@@ -27,6 +29,8 @@ export default function Timer({
   shortBreakMinutes = 5,
   longBreakMinutes = 15,
 }: Props) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("timer");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [timerMode, setTimerMode] = useState<TimerMode>("focus");
@@ -137,12 +141,30 @@ export default function Timer({
       <div className="absolute inset-0 bg-black/20" />
 
       {/* Logo */}
-      <div className="absolute top-0 right-8 z-30 flex items-center gap-1 pointer-events-none">
+      <div className="absolute top-0 left-0 z-30 flex items-center gap-1 pointer-events-none">
+        <img src={logo} alt="Gymodoro" className="w-[135px] h-[135px] object-contain" />
         <span className="text-white font-extrabold tracking-wide text-2xl font-poppins">
           GYMODORO
         </span>
-        <img src={logo} alt="Gymodoro" className="w-[135px] h-[135px] object-contain" />
       </div>
+
+      {/* Logout Button */}
+      <button
+        onClick={async () => {
+          await logout();
+          navigate("/welcome");
+        }}
+        className={cn(
+          "absolute top-3 right-3 z-30 h-9 px-3 rounded-lg",
+          "border border-white/15 bg-black/40 backdrop-blur-md",
+          "flex items-center justify-center gap-1.5 text-white/70 text-sm font-semibold font-poppins",
+          "hover:bg-black/60 hover:text-white transition-colors"
+        )}
+        aria-label="Logout"
+      >
+        <LogOut size={16} className="stroke-2" />
+        <span>Logout</span>
+      </button>
 
       {/* Sidebar */}
       <Sidebar
@@ -161,7 +183,7 @@ export default function Timer({
             "bg-transparent hover:bg-black/60 flex items-center justify-center",
             "text-white/70 transition-colors"
           )}
-          style={{ left: "16px", top: "74px" }}
+          style={{ left: "16px", top: "116px" }}
         >
           <Menu size={18} className="stroke-2" />
         </button>

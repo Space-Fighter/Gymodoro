@@ -2,6 +2,7 @@ import { RotateCcw, Pause, Play, Dice6 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ExerciseType } from "@/types/exercise";
 import GifLoop from "@/components/timer/GifLoop";
+import TagList from "@/components/timer/TagList";
 
 interface Mode {
   id: "focus" | "short" | "long";
@@ -84,13 +85,13 @@ export default function BreakView({
           <div className="flex gap-3">
             <button
               onClick={onActivityChange}
-              className="flex-1 px-4 py-3 rounded-lg bg-orange-500 hover:bg-orange-400 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/15 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
             >
               <Dice6 size={18} /> Roll The Dice
             </button>
             <button
               onClick={onActivitySelect}
-              className="flex-1 px-4 py-3 rounded-lg border border-white/25 backdrop-blur-md bg-orange-500/30 hover:bg-orange-500/40 text-white font-semibold text-sm transition-colors"
+              className="flex-1 px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/15 text-white font-bold text-sm transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
             >
               Choose Activity
             </button>
@@ -102,26 +103,7 @@ export default function BreakView({
                 {activity.name}
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {activity.difficulty && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/15 text-white">
-                    {activity.difficulty}
-                  </span>
-                )}
-                {activity.exerciseTypes?.map((type) => (
-                  <span
-                    key={type}
-                    className="px-3 py-1 rounded-full text-xs font-semibold bg-white/15 text-white"
-                  >
-                    {type}
-                  </span>
-                ))}
-                {activity.bodyArea && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/15 text-white">
-                    {activity.bodyArea}
-                  </span>
-                )}
-              </div>
+              <TagList exercise={activity} />
 
               <div className="rounded-lg overflow-hidden aspect-video bg-black border border-white/10">
                 {activity.gifUrl ? (
