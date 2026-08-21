@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { prisma } from '../lib/prisma.js';
-import type { SeedExercise } from './import-wger.js';
+import type { SeedExercise } from './types.js';
 
 /** Upserts each name into a lookup table and returns a name → id map. */
 async function upsertLookup(
@@ -36,24 +36,29 @@ async function main() {
   const allMuscleGroups = [...new Set(exercises.flatMap((e) => e.muscleGroups))];
   const allEquipment = [...new Set(exercises.flatMap((e) => e.equipment))];
   const allExerciseTypes = [...new Set(exercises.flatMap((e) => e.exerciseTypes))];
+  const allDifficulties = [...new Set(exercises.map((e) => e.difficulty))];
+  const allBodyAreas = [...new Set(exercises.flatMap((e) => (e.bodyArea ? [e.bodyArea] : [])))];
 
   const muscleGroupIds = await upsertLookup(prisma.muscleGroup, allMuscleGroups);
   const equipmentIds = await upsertLookup(prisma.equipment, allEquipment);
   const exerciseTypeIds = await upsertLookup(prisma.exerciseType, allExerciseTypes);
+  const difficultyIds = await upsertLookup(prisma.difficulty, allDifficulties);
+  const bodyAreaIds = await upsertLookup(prisma.bodyArea, allBodyAreas);
 
   console.log(
-    `   Lookups: ${muscleGroupIds.size} muscle groups, ${equipmentIds.size} equipment, ${exerciseTypeIds.size} types.`,
+    `   Lookups: ${muscleGroupIds.size} muscle groups, ${equipmentIds.size} equipment, ${exerciseTypeIds.size} types, ${difficultyIds.size} difficulties, ${bodyAreaIds.size} body areas.`,
   );
 
   for (const exercise of exercises) {
     const scalars = {
       description: exercise.description,
-      difficulty: exercise.difficulty,
       mechanic: exercise.mechanic,
       force: exercise.force,
       videoUrl: exercise.videoUrl,
       gifUrl: exercise.gifUrl,
       muscleDiagramUrl: exercise.muscleDiagramUrl,
+      difficultyId: difficultyIds.get(exercise.difficulty)!,
+      bodyAreaId: exercise.bodyArea ? bodyAreaIds.get(exercise.bodyArea)! : null,
     };
 
     const row = await prisma.exercise.upsert({

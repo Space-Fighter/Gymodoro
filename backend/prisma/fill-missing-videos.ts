@@ -1,56 +1,33 @@
 /**
- * Fallback maintenance script — run only if import-wger.ts left gaps.
+ * Fallback maintenance script — run after import-wger.ts / import-darebee.ts
+ * leaves gaps.
  *
- * import-wger.ts restricts video search to the Leap Fitness channel, so some
- * exercises come out with videoUrl: null. This script reads the small
- * missing-video-exercises.json list it leaves behind and re-queries YouTube
- * *without* the channel restriction for just those exercises.
+ * Those scripts restrict video search to the Leap Fitness/Howcast channels,
+ * so plenty of exercises come out with videoUrl: null. This script reads the
+ * missing-video-exercises.json list they leave behind and fills every one it
+ * can via an unrestricted yt-dlp search (no API key, no quota) — the same
+ * scraping approach import-*.ts already use, just with no channel filter.
  *
- * Kept separate from import-wger.ts on purpose: the trusted single-channel
- * search and the best-effort broad search stay distinguishable, and each
- * filled entry records videoSource: "youtube-search" so anyone reading the
- * data later can tell where a video came from.
+ * videoUrl must never end up equal to gifUrl (Darebee's own looping demo
+ * embed) — findYoutubeVideoUnrestricted() already excludes both the Darebee
+ * channel and the gif's own video id, and the result is checked again here
+ * before being written.
+ *
+ * Whatever yt-dlp can't find stays in missing-video-exercises.json,
+ * unchanged, for a future run.
  *
  * Run with: npm run db:fill-missing-videos
  */
 import 'dotenv/config';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { MissingVideoExercise, SeedExercise } from './import-wger.js';
+import type { MissingVideoExercise, SeedExercise } from './types.js';
+import { extractYoutubeVideoId, findYoutubeVideoUnrestricted } from './youtube.js';
 
 const dataPath = join(import.meta.dirname, 'exercise-seed-data.json');
 const missingPath = join(import.meta.dirname, 'missing-video-exercises.json');
 
-/** Unrestricted YouTube search — best-effort, null on any failure. */
-async function findYoutubeVideo(name: string, apiKey: string): Promise<string | null> {
-  try {
-    const url = new URL('https://www.googleapis.com/youtube/v3/search');
-    url.searchParams.set('part', 'snippet');
-    url.searchParams.set('q', `${name} exercise tutorial`);
-    url.searchParams.set('type', 'video');
-    url.searchParams.set('maxResults', '1');
-    url.searchParams.set('key', apiKey);
-
-    const res = await fetch(url);
-    if (!res.ok) {
-      console.warn(`  ⚠️  YouTube lookup failed for "${name}": ${res.status} ${res.statusText}`);
-      return null;
-    }
-    const data: any = await res.json();
-    const videoId = data.items?.[0]?.id?.videoId;
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-  } catch (error) {
-    console.warn(`  ⚠️  YouTube lookup errored for "${name}":`, error);
-    return null;
-  }
-}
-
 async function main() {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  if (!apiKey) {
-    throw new Error('YOUTUBE_API_KEY is not set in backend/.env — nothing to search with.');
-  }
-
   const missing: MissingVideoExercise[] = JSON.parse(readFileSync(missingPath, 'utf8'));
   if (missing.length === 0) {
     console.log('✅ missing-video-exercises.json is empty — nothing to fill.');
@@ -58,36 +35,51 @@ async function main() {
   }
 
   const exercises: SeedExercise[] = JSON.parse(readFileSync(dataPath, 'utf8'));
-  // Built once so each fill is an O(1) lookup rather than a re-scan per item.
   const byName = new Map(exercises.map((e) => [e.name, e]));
 
   const stillMissing: MissingVideoExercise[] = [];
   let filled = 0;
 
-  for (const item of missing) {
-    console.log(`🔎 ${item.name} (wger #${item.wgerId})`);
+  // Persists after every single item (not just at the end) so Ctrl-C never
+  // loses progress: missingPath always reflects "everything not yet
+  // successfully filled" — both confirmed misses so far and whatever hasn't
+  // been attempted yet in this run.
+  function persist(unprocessed: MissingVideoExercise[]) {
+    writeFileSync(dataPath, `${JSON.stringify(exercises, null, 2)}\n`);
+    writeFileSync(missingPath, `${JSON.stringify([...stillMissing, ...unprocessed], null, 2)}\n`);
+  }
+
+  for (let i = 0; i < missing.length; i++) {
+    const item = missing[i];
+    console.log(`🔎 ${item.name}${item.wgerId ? ` (wger #${item.wgerId})` : ''}`);
     const exercise = byName.get(item.name);
     if (!exercise) {
       console.warn(`  ⚠️  "${item.name}" is not in exercise-seed-data.json — skipping.`);
       continue;
     }
 
-    const videoUrl = await findYoutubeVideo(item.name, apiKey);
+    // gifUrl already holds Darebee's own demo embed for this exercise —
+    // videoUrl must never end up pointing at that same video.
+    const gifVideoId = extractYoutubeVideoId(exercise.gifUrl);
+
+    const ytDlpResult = await findYoutubeVideoUnrestricted(item.name, gifVideoId);
+    const videoUrl =
+      ytDlpResult && extractYoutubeVideoId(ytDlpResult.url) !== gifVideoId ? ytDlpResult.url : null;
+
     if (videoUrl) {
       exercise.videoUrl = videoUrl;
-      exercise.videoSource = 'youtube-search';
+      exercise.videoSource = 'yt-dlp-search';
       filled += 1;
-      console.log(`  ✅ ${videoUrl}`);
+      console.log(`  ✅ [yt-dlp-search] ${videoUrl}`);
     } else {
       stillMissing.push(item);
       console.log('  ❌ still no match');
     }
+
+    persist(missing.slice(i + 1));
   }
 
-  writeFileSync(dataPath, `${JSON.stringify(exercises, null, 2)}\n`);
-  writeFileSync(missingPath, `${JSON.stringify(stillMissing, null, 2)}\n`);
-
-  console.log(`\n✅ Filled ${filled} video(s); ${stillMissing.length} still missing.`);
+  console.log(`\n✅ Filled ${filled} video(s) via yt-dlp; ${stillMissing.length} still missing.`);
   console.log('   Spot-check the new videoUrl values before committing.');
 }
 

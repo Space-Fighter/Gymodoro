@@ -48,7 +48,6 @@ model Exercise {
   id               String   @id @default(uuid())
   name             String   @unique
   description      String
-  difficulty       String // "easy" | "medium" | "hard"
   mechanic         String? // "compound" | "isolation"
   force            String? // "push" | "pull" | "static"
   videoUrl         String?
@@ -57,9 +56,29 @@ model Exercise {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  difficultyId String
+  difficulty   Difficulty @relation(fields: [difficultyId], references: [id])
+
+  bodyAreaId String?
+  bodyArea   BodyArea? @relation(fields: [bodyAreaId], references: [id])
+
   muscleGroups  ExerciseMuscleGroup[]
   equipment     ExerciseEquipment[]
   exerciseTypes ExerciseExerciseType[]
+}
+
+model Difficulty {
+  id   String @id @default(uuid())
+  name String @unique // "light" | "easy" | "normal" | "hard" | "advanced"
+
+  exercises Exercise[]
+}
+
+model BodyArea {
+  id   String @id @default(uuid())
+  name String @unique // e.g. "abs" | "upper-body" | "lower-body" | "full-body" | "back"
+
+  exercises Exercise[]
 }
 
 model MuscleGroup {

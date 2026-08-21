@@ -6,3 +6,6 @@ node_modules
 
 /generated/prisma
 dist
+
+# Standalone yt-dlp binary used by prisma/import-wger.ts — downloaded, not checked in
+/.tools

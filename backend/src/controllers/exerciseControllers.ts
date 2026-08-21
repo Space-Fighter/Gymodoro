@@ -1,35 +1,42 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma.js';
 
-const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
+const VALID_DIFFICULTIES = ['light', 'easy', 'normal', 'hard', 'advanced', 'untagged'];
 
 // Shared include shape so list/single/random all return the same tag shape.
 const EXERCISE_INCLUDE = {
   muscleGroups: { include: { muscleGroup: true } },
   equipment: { include: { equipment: true } },
   exerciseTypes: { include: { exerciseType: true } },
+  difficulty: true,
+  bodyArea: true,
 } as const;
 
 // Flattens the join-table wrapper objects into plain string arrays so
 // clients don't have to unwrap muscleGroups[].muscleGroup.name.
 function serializeExercise(exercise: any) {
-  const { muscleGroups, equipment, exerciseTypes, ...rest } = exercise;
+  const { muscleGroups, equipment, exerciseTypes, difficulty, bodyArea, ...rest } = exercise;
   return {
     ...rest,
     muscleGroups: muscleGroups.map((mg: any) => mg.muscleGroup.name),
     equipment: equipment.map((e: any) => e.equipment.name),
     exerciseTypes: exerciseTypes.map((et: any) => et.exerciseType.name),
+    difficulty: difficulty.name,
+    bodyArea: bodyArea?.name ?? null,
   };
 }
 
 // Builds a Prisma `where` clause shared by list + random, from
 // ?muscleGroup=&equipment=&type=&difficulty= query params.
 function buildWhere(query: Request['query']) {
-  const { muscleGroup, equipment, type, difficulty } = query;
+  const { muscleGroup, equipment, type, difficulty, bodyArea } = query;
   const where: any = {};
 
   if (typeof difficulty === 'string') {
-    where.difficulty = difficulty.toLowerCase();
+    where.difficulty = { name: { equals: difficulty, mode: 'insensitive' } };
+  }
+  if (typeof bodyArea === 'string') {
+    where.bodyArea = { name: { equals: bodyArea, mode: 'insensitive' } };
   }
   if (typeof muscleGroup === 'string') {
     where.muscleGroups = { some: { muscleGroup: { name: { equals: muscleGroup, mode: 'insensitive' } } } };

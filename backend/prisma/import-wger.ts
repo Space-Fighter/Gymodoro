@@ -9,10 +9,10 @@
  *
  * Run with: npm run db:import-wger
  *
- * Requires YOUTUBE_API_KEY and GIPHY_API_KEY in backend/.env. Note the free
- * quotas: YouTube gives 10,000 units/day and each search costs 100 units
- * (~100 searches/day), Giphy's beta key allows 100 req/hour. A single ~20
- * exercise run is comfortably inside both — don't loop this script.
+ * Video lookup uses a standalone yt-dlp binary (scraping YouTube search, no
+ * API key/quota) — see YT_DLP_PATH below for how to fetch it. Requires
+ * GIPHY_API_KEY in backend/.env for gifs; note Giphy's beta key allows only
+ * 100 req/hour, so don't loop this script.
  */
 // JS/TS: `import 'x'` with no name just runs the module for its side effects —
 // here, dotenv/config reads backend/.env and copies its values into
@@ -20,9 +20,11 @@
 // fs/path modules and our own curated.ts file (note the `.js` extension even
 // though the source is .ts — required by this project's ESM setup).
 import 'dotenv/config';
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { WANTED_EXERCISES } from './curated.js';
+import type { MissingVideoExercise, SeedExercise } from './types.js';
+import { findYoutubeVideo, YT_DLP_PATH } from './youtube.js';
 
 const WGER_API = 'https://wger.de/api/v2/exerciseinfo/?language=2&limit=100';
 
@@ -32,62 +34,6 @@ const WGER_API = 'https://wger.de/api/v2/exerciseinfo/?language=2&limit=100';
 // fetched once and matched against in memory.
 const FREE_EXERCISE_DB_URL =
   'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
-
-// videoUrl is restricted to these two trusted channels — Leap Fitness ("Home
-// Workout") and Howcast — tried in order. Anything neither covers is left
-// null and handed off to fill-missing-videos.ts rather than falling back
-// silently here.
-const LEAP_FITNESS_CHANNEL_ID = 'UCiFMiTjklR2FHfRLt04ywyA';
-const HOWCAST_CHANNEL_ID = 'UCSpVHeDGr9UbREhRca0qwsA';
-
-// JS: this is an array of plain objects (object literal syntax: { key: value }).
-// TS: `as const` tells TypeScript to treat this as a fixed, read-only tuple of
-// exact string literals ('leap-fitness' | 'howcast') instead of the wider,
-// mutable type `{ id: string; channelId: string }[]` it would normally infer.
-// That's what lets VideoMatch below reuse the exact 'id' values as a type.
-const VIDEO_SOURCES = [
-  { id: 'leap-fitness', channelId: LEAP_FITNESS_CHANNEL_ID },
-  { id: 'howcast', channelId: HOWCAST_CHANNEL_ID },
-] as const;
-
-// TS concept: `interface` declares the *shape* of an object — which
-// properties it must have and what type each one is. It's a compile-time-only
-// construct (it produces no JavaScript at all); it just lets the TypeScript
-// compiler catch mistakes like a missing field or a typo'd property name.
-// `string | null` is a "union type" — meaning this value is either a string
-// or exactly `null`, nothing else. `'easy' | 'medium' | 'hard'` is a union of
-// specific string literals, so only those three exact strings are allowed
-// (unlike plain `string`, which would allow any string). `export` makes this
-// interface importable from other files.
-//
-// Shape of one row written to exercise-seed-data.json — this is what
-// seed.ts reads back in, so it's also effectively the DB seed schema.
-export interface SeedExercise {
-  name: string;
-  description: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  // From free-exercise-db (see FreeExerciseMatch below); null when no match
-  // was found for this exercise's name, since there's no sane heuristic
-  // fallback for these two (unlike difficulty).
-  mechanic: 'compound' | 'isolation' | null;
-  force: 'push' | 'pull' | 'static' | null;
-  videoUrl: string | null;
-  videoSource: 'leap-fitness' | 'howcast' | null;
-  gifUrl: string | null;
-  muscleDiagramUrl: string | null;
-  muscleGroups: string[];
-  equipment: string[];
-  exerciseTypes: string[];
-  source: { wgerId: number; wgerUuid: string };
-}
-
-// One row per curated exercise that got no video from either trusted
-// channel — written to missing-video-exercises.json for
-// fill-missing-videos.ts to pick up separately.
-export interface MissingVideoExercise {
-  name: string;
-  wgerId: number;
-}
 
 // JS concept: `.replace(pattern, replacement)` is a String method. Each
 // pattern here is a "regular expression" (regex) — a mini pattern-matching
@@ -140,10 +86,11 @@ function muscleName(muscle: { name: string; name_en?: string }): string {
 }
 
 // Difficulty comes entirely from free-exercise-db's human-assigned `level`
-// now — no more name/equipment guessing. `'medium'` is just a neutral default
-// for the exercises that dataset doesn't have (no sane way to guess those).
-function inferDifficulty(match: FreeExerciseMatch | null): 'easy' | 'medium' | 'hard' {
-  return match ? levelToDifficulty(match.level) : 'medium';
+// now — no more name/equipment guessing. Exercises that dataset doesn't have
+// get 'untagged' rather than a guessed difficulty, since there's no sane way
+// to guess those.
+function inferDifficulty(match: FreeExerciseMatch | null): 'easy' | 'medium' | 'hard' | 'untagged' {
+  return match ? levelToDifficulty(match.level) : 'untagged';
 }
 
 // `.find(...)` scans the array and returns the *first* element for which the
@@ -298,85 +245,6 @@ function levelToDifficulty(level: FreeExerciseMatch['level']): 'easy' | 'medium'
   return 'hard';
 }
 
-// `(typeof VIDEO_SOURCES)[number]['id']` is TypeScript "type-level" code, not
-// runtime code — it reads as "the type of the `id` property, on whichever
-// element type the `VIDEO_SOURCES` array/tuple contains". Combined with the
-// `as const` on VIDEO_SOURCES above, that resolves to exactly
-// `'leap-fitness' | 'howcast'`, so if you add a third channel to
-// VIDEO_SOURCES, this type updates automatically instead of needing to be
-// edited by hand in two places.
-//
-// What findYoutubeVideo() returns on a hit: the embeddable URL plus which of
-// the two trusted channels it came from (stored as videoSource).
-interface VideoMatch {
-  url: string;
-  source: (typeof VIDEO_SOURCES)[number]['id'];
-}
-
-/**
- * Top YouTube result for the exercise from a single channel. Returns null
- * (rather than throwing) on any failure so one bad lookup can't sink the
- * whole import.
- */
-async function findYoutubeVideoOnChannel(
-  name: string,
-  channelId: string,
-  apiKey: string,
-): Promise<string | null> {
-  // try/catch: if anything inside `try` throws an error (e.g. the network
-  // request fails outright), execution jumps straight to `catch` instead of
-  // crashing the whole script — that's how one bad lookup is prevented from
-  // sinking the entire import run.
-  try {
-    // `new URL(...)` gives a structured object for building a URL instead of
-    // string-concatenating query params by hand. `.searchParams.set(key,
-    // value)` adds `?key=value`, automatically handling encoding of special
-    // characters (spaces, etc).
-    const url = new URL('https://www.googleapis.com/youtube/v3/search');
-    url.searchParams.set('part', 'snippet');
-    url.searchParams.set('q', `${name} exercise tutorial`);
-    url.searchParams.set('type', 'video');
-    url.searchParams.set('channelId', channelId);
-    url.searchParams.set('maxResults', '1');
-    url.searchParams.set('key', apiKey);
-
-    const res = await fetch(url);
-    if (!res.ok) {
-      console.warn(`  ⚠️  YouTube lookup failed for "${name}": ${res.status} ${res.statusText}`);
-      return null;
-    }
-    const data: any = await res.json();
-    // `?.` is "optional chaining": normally `data.items[0].id.videoId` would
-    // throw if `items` were empty or any step along the way were
-    // missing/undefined. `?.` instead short-circuits to `undefined` the
-    // moment it hits a missing link, so this whole expression is safe even
-    // when the search returned zero results.
-    const videoId = data.items?.[0]?.id?.videoId;
-    // Ternary operator: `condition ? valueIfTrue : valueIfFalse`, a compact
-    // one-line if/else used here to build the embed URL only if a video was
-    // actually found.
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-  } catch (error) {
-    console.warn(`  ⚠️  YouTube lookup errored for "${name}":`, error);
-    return null;
-  }
-}
-
-// `for (const { id, channelId } of VIDEO_SOURCES)` combines two things:
-// `for...of` iterates over each element of an array (unlike a plain `for`
-// loop, you don't manage an index yourself), and `{ id, channelId }` is
-// "destructuring" — it pulls the `id` and `channelId` properties straight out
-// of each object into their own local variables instead of writing
-// `source.id` / `source.channelId`.
-/** Tries each trusted channel in order (Leap Fitness, then Howcast) and returns the first hit. */
-async function findYoutubeVideo(name: string, apiKey: string): Promise<VideoMatch | null> {
-  for (const { id, channelId } of VIDEO_SOURCES) {
-    const url = await findYoutubeVideoOnChannel(name, channelId, apiKey);
-    if (url) return { url, source: id };
-  }
-  return null;
-}
-
 /** Top Giphy result, kept on Giphy's own CDN (never re-hosted). */
 async function findGiphyGif(name: string, apiKey: string): Promise<string | null> {
   try {
@@ -400,13 +268,18 @@ async function findGiphyGif(name: string, apiKey: string): Promise<string | null
 }
 
 async function main() {
-  // Step 1: load API keys. Missing keys aren't fatal — the script still runs
-  // and just leaves videoUrl/gifUrl null for every exercise.
-  const youtubeKey = process.env.YOUTUBE_API_KEY;
+  // Step 1: load the Giphy key (still the official API — missing isn't
+  // fatal, just leaves gifUrl null for every exercise) and check yt-dlp is
+  // actually present, since video lookup hard-depends on it now.
   const giphyKey = process.env.GIPHY_API_KEY;
 
-  if (!youtubeKey) console.warn('⚠️  YOUTUBE_API_KEY not set — every videoUrl will be null.');
   if (!giphyKey) console.warn('⚠️  GIPHY_API_KEY not set — every gifUrl will be null.');
+  if (!existsSync(YT_DLP_PATH)) {
+    throw new Error(
+      `yt-dlp binary not found at ${YT_DLP_PATH}. Download it with:\n` +
+        '  curl -L -o .tools/yt-dlp.exe https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe',
+    );
+  }
 
   // Step 2: pull every wger exercise page (see fetchWgerExercises above).
   const raw = await fetchWgerExercises();
@@ -471,7 +344,7 @@ async function main() {
 
     // findYoutubeVideo tries Leap Fitness first, then Howcast, returning the
     // first hit; null if neither channel has a matching video.
-    const video = youtubeKey ? await findYoutubeVideo(wantedName, youtubeKey) : null;
+    const video = await findYoutubeVideo(wantedName);
     const gifUrl = giphyKey ? await findGiphyGif(wantedName, giphyKey) : null;
     const freeExerciseMatch = findFreeExerciseMatch(wantedName, freeExerciseIndex);
 
@@ -499,6 +372,7 @@ async function main() {
       videoSource: video?.source ?? null,
       gifUrl,
       muscleDiagramUrl: entry.images?.[0]?.image ?? null,
+      bodyArea: null,
       muscleGroups,
       equipment,
       exerciseTypes,
