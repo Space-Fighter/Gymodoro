@@ -7,5 +7,5 @@ node_modules
 /generated/prisma
 dist
 
-# Local development tools
-.tools/
+# Standalone yt-dlp binary used by prisma/import-wger.ts — downloaded, not checked in
+/.tools

@@ -43,3 +43,91 @@ model RefreshToken {
   updatedAt   DateTime @updatedAt
   expireAt    DateTime
 }
+
+model Exercise {
+  id               String   @id @default(uuid())
+  name             String   @unique
+  description      String
+  mechanic         String? // "compound" | "isolation"
+  force            String? // "push" | "pull" | "static"
+  videoUrl         String?
+  gifUrl           String?
+  muscleDiagramUrl String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  difficultyId String
+  difficulty   Difficulty @relation(fields: [difficultyId], references: [id])
+
+  bodyAreaId String?
+  bodyArea   BodyArea? @relation(fields: [bodyAreaId], references: [id])
+
+  muscleGroups  ExerciseMuscleGroup[]
+  equipment     ExerciseEquipment[]
+  exerciseTypes ExerciseExerciseType[]
+}
+
+model Difficulty {
+  id   String @id @default(uuid())
+  name String @unique // "light" | "easy" | "normal" | "hard" | "advanced"
+
+  exercises Exercise[]
+}
+
+model BodyArea {
+  id   String @id @default(uuid())
+  name String @unique // e.g. "abs" | "upper-body" | "lower-body" | "full-body" | "back"
+
+  exercises Exercise[]
+}
+
+model MuscleGroup {
+  id   String @id @default(uuid())
+  name String @unique
+
+  exercises ExerciseMuscleGroup[]
+}
+
+model Equipment {
+  id   String @id @default(uuid())
+  name String @unique
+
+  exercises ExerciseEquipment[]
+}
+
+model ExerciseType {
+  id   String @id @default(uuid())
+  name String @unique
+
+  exercises ExerciseExerciseType[]
+}
+
+model ExerciseMuscleGroup {
+  id            String      @id @default(uuid())
+  exerciseId    String
+  exercise      Exercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  muscleGroupId String
+  muscleGroup   MuscleGroup @relation(fields: [muscleGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, muscleGroupId])
+}
+
+model ExerciseEquipment {
+  id          String    @id @default(uuid())
+  exerciseId  String
+  exercise    Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, equipmentId])
+}
+
+model ExerciseExerciseType {
+  id             String       @id @default(uuid())
+  exerciseId     String
+  exercise       Exercise     @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  exerciseTypeId String
+  exerciseType   ExerciseType @relation(fields: [exerciseTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, exerciseTypeId])
+}
