@@ -541,3 +541,16 @@ export async function logout(req: Request, res: Response) {
     res.status(500).json({ error: 'Logout failed.' });
   }
 }
+
+export async function deleteAccount(req: Request, res: Response) {
+  try {
+    // RefreshToken and Session rows cascade-delete with the User
+    // (onDelete: Cascade in schema.prisma), so no manual cleanup needed.
+    await prisma.user.delete({ where: { id: req.userId } });
+    clearRefreshCookie(res);
+    res.status(200).json({ message: 'Account deleted successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Account deletion failed.' });
+  }
+}

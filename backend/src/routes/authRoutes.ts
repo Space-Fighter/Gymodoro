@@ -1,5 +1,6 @@
 import express from 'express';
 import * as authController from '../controllers/authControllers.js';
+import { authenticate } from '../middleware/authenticate.js';
 
 const authRouter = express.Router();
 
@@ -13,5 +14,7 @@ authRouter.post('/resend-verification', authController.resendVerificationEmail);
 
 authRouter.get('/get-me', authController.getMe);
 authRouter.get('/verify-email', authController.verifyEmail);
+
+authRouter.delete('/account', authenticate, authController.deleteAccount);
 
 export default authRouter;

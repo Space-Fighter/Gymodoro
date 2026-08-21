@@ -1,21 +1,46 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "@/assets/gymodoro-logo.png";
 import ModeToggle from "@/components/mode-toggle";
+import { useAuth } from "@/hooks/useAuth";
+import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
 
 export default function SignIn() {
+  const navigate = useNavigate();
+  const { login, googleLogin, isLoading, error } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Placeholder submission for auth integration
-    console.log("Sign In attempt:", { email, password });
+    setLocalError(null);
+    try {
+      await login(email, password);
+      navigate("/");
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : "Sign in failed");
+    }
   };
+
+  const handleGoogleCredential = useCallback(
+    async (idToken: string) => {
+      setLocalError(null);
+      try {
+        await googleLogin(idToken);
+        navigate("/");
+      } catch (err) {
+        setLocalError(err instanceof Error ? err.message : "Google sign-in failed");
+      }
+    },
+    [googleLogin, navigate]
+  );
+
+  const { promptGoogleSignIn } = useGoogleSignIn(handleGoogleCredential);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-emerald-500/30">
-      
+
       {/* Auth Navbar */}
       <header className="w-full px-6 sm:px-12 h-20 flex items-center justify-between border-b border-border/20 backdrop-blur-sm">
         <Link
@@ -59,6 +84,12 @@ export default function SignIn() {
             </p>
           </div>
 
+          {(error || localError) && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+              {error || localError}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5 text-left">
               <label
@@ -98,9 +129,10 @@ export default function SignIn() {
 
             <button
               type="submit"
-              className="w-full py-3.5 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm tracking-wide transition-all duration-200 cursor-pointer shadow-lg shadow-emerald-500/20 hover:-translate-y-0.5 mt-2"
+              disabled={isLoading}
+              className="w-full py-3.5 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm tracking-wide transition-all duration-200 cursor-pointer shadow-lg shadow-emerald-500/20 hover:-translate-y-0.5 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {isLoading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
@@ -118,17 +150,12 @@ export default function SignIn() {
           <div className="space-y-2.5">
             <button
               type="button"
-              className="w-full py-2.5 px-4 rounded-lg border border-border hover:border-emerald-500/60 bg-background/50 hover:bg-secondary text-foreground text-sm font-medium flex items-center justify-center gap-3 transition-all duration-150"
+              onClick={promptGoogleSignIn}
+              disabled={isLoading}
+              className="w-full py-2.5 px-4 rounded-lg border border-border hover:border-emerald-500/60 bg-background/50 hover:bg-secondary text-foreground text-sm font-medium flex items-center justify-center gap-3 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span>🌐</span>
               <span>Sign in with Google</span>
-            </button>
-            <button
-              type="button"
-              className="w-full py-2.5 px-4 rounded-lg border border-border hover:border-emerald-500/60 bg-background/50 hover:bg-secondary text-foreground text-sm font-medium flex items-center justify-center gap-3 transition-all duration-150"
-            >
-              <span></span>
-              <span>Sign in with Apple</span>
             </button>
           </div>
 
