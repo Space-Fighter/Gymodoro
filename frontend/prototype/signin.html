@@ -1,0 +1,186 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign In — Gymodoro</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&family=JetBrains+Mono:wght@500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --background:#161311;--surface:#1c1917;--surface-deep:#0c0a09;
+  --surface-variant:#383432;--text-primary:#fafaf9;--text-secondary:#d6d3d1;
+  --text-muted:#57534e;--primary:#22c55e;--primary-bright:#4be277;
+  --line:#292524;
+}
+html[data-theme="light"]{
+  --background:#f6f7f3;--surface:#ffffff;--surface-deep:#eef1ec;
+  --surface-variant:#dfe5dc;--text-primary:#111511;--text-secondary:#4b554c;
+  --text-muted:#697169;--primary:#22a447;--primary-bright:#55ad45;--line:#dfe5dc;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,sans-serif;background:var(--background);color:var(--text-primary);transition:.25s ease}
+body{min-height:100vh;display:flex;flex-direction:column}
+a{text-decoration:none;color:inherit}
+.nav{height:72px;border-bottom:0;display:flex;align-items:center;justify-content:space-between;padding:0 48px}
+.brand{font:700 24px/32px "Plus Jakarta Sans",sans-serif;color:var(--primary-bright);white-space:nowrap;display:flex;align-items:center;gap:10px}.brand-logo{width:62px;height:48px;object-fit:contain;display:block}
+.nav-right{display:flex;align-items:center;gap:12px}
+.theme-toggle{width:40px;height:40px;border:0;background:transparent;color:var(--text-secondary);font-size:21px;cursor:pointer;border-radius:50%}
+.theme-toggle:hover{color:var(--primary);background:var(--surface)}
+.nav-button{background:transparent;color:var(--text-primary);font:600 14px/20px Inter;padding:10px 22px;border-radius:4px;border:0}
+.main{flex:1;display:flex;align-items:center;justify-content:center;padding:64px 16px;position:relative;overflow:hidden}
+.main:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 0%,rgba(34,197,94,.06),transparent 50%)}
+.card{width:100%;max-width:504px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:40px;position:relative;z-index:1;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+.title{text-align:center;margin-bottom:24px}
+.title h1{font:700 32px/40px "Plus Jakarta Sans",sans-serif;letter-spacing:-.02em;margin:0 0 8px}
+.title p{font:400 16px/24px Inter;color:var(--text-secondary);margin:0}
+.form{display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font:500 12px/16px "JetBrains Mono",monospace;letter-spacing:.05em;color:var(--text-secondary)}
+.field input{width:100%;background:var(--surface-deep);border:1px solid var(--line);border-radius:4px;color:var(--text-primary);padding:12px 16px;font:400 16px/24px Inter;outline:none}
+.field input:focus{border-color:var(--primary);box-shadow:0 0 0 1px rgba(34,197,94,.18),inset 0 0 8px rgba(34,197,94,.08)}
+.primary{width:100%;border:0;background:var(--primary);color:#001b09;font:600 14px/20px Inter;padding:12px 16px;border-radius:4px;cursor:pointer;margin-top:8px;box-shadow:0 0 16px rgba(34,197,94,.18)}
+.divider{display:flex;align-items:center;gap:16px;margin:24px 0;color:var(--text-muted);font:500 12px/16px "JetBrains Mono";letter-spacing:.08em;text-transform:uppercase}
+.divider:before,.divider:after{content:"";height:1px;background:var(--line);flex:1}
+.alt{width:100%;border:1px solid var(--text-muted);background:transparent;color:var(--text-primary);font:600 14px/20px Inter;padding:11px 16px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.alt:hover{border-color:var(--primary)}
+.switch{text-align:center;margin-top:32px;color:var(--text-secondary);font:400 16px/24px Inter}
+.switch a{color:var(--primary);margin-left:4px}
+.footer{border-top:1px solid var(--line);background:var(--surface-deep);padding:22px 48px;display:flex;justify-content:space-between;align-items:center;color:var(--text-muted);font:500 12px/16px "JetBrains Mono"}
+.footer .brand{font-size:18px}
+@media(max-width:650px){
+ .nav{padding:0 16px}.brand{font-size:20px}.nav-button{padding:9px 15px}
+ .card{padding:28px 20px}.footer{padding:20px 16px;gap:16px;flex-direction:column}
+}
+
+/* Requested glass header + subtle Gymodoro hover motion */
+.nav{
+  background:color-mix(in srgb, var(--background) 68%, transparent);
+  -webkit-backdrop-filter:blur(18px) saturate(135%);
+  backdrop-filter:blur(18px) saturate(135%);
+  border:none;
+  box-shadow:0 10px 30px rgba(17,21,17,.07);
+}
+html[data-theme="dark"] .nav{background:rgba(12,10,9,.62);border:none;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.nav-button,.theme-toggle,.primary,.alt,.switch a,.brand{transition:transform .22s ease,box-shadow .22s ease,color .22s ease,border-color .22s ease,background-color .22s ease}
+.nav-button:hover,.primary:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(34,164,71,.18)}
+.alt:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(34,164,71,.12)}
+.switch a:hover{transform:translateY(-1px);display:inline-block}
+.theme-toggle:hover{transform:translateY(-2px) scale(1.04)}
+
+
+/* Header orientation: fully merged with page background; raised 3D controls without boxes */
+.nav{
+  background:transparent !important;
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+  border:none !important;
+  box-shadow:none !important;
+}
+.nav-actions .theme-toggle,
+.nav-actions .auth-link,
+.nav-right .theme-toggle,
+.nav-right .nav-button{
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  text-shadow:0 2px 0 rgba(0,0,0,.12),0 4px 10px rgba(0,0,0,.10);
+}
+html[data-theme="dark"] .nav-actions .theme-toggle,
+html[data-theme="dark"] .nav-actions .auth-link,
+html[data-theme="dark"] .nav-right .theme-toggle,
+html[data-theme="dark"] .nav-right .nav-button{
+  text-shadow:0 2px 0 rgba(0,0,0,.45),0 5px 12px rgba(0,0,0,.28);
+}
+.nav-actions .theme-toggle:hover,
+.nav-actions .auth-link:hover,
+.nav-right .theme-toggle:hover,
+.nav-right .nav-button:hover{
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  transform:translateY(-3px) !important;
+  text-shadow:0 3px 0 rgba(0,0,0,.14),0 7px 14px rgba(85,173,69,.22);
+}
+html[data-theme="dark"] .nav-actions .theme-toggle:hover,
+html[data-theme="dark"] .nav-actions .auth-link:hover,
+html[data-theme="dark"] .nav-right .theme-toggle:hover,
+html[data-theme="dark"] .nav-right .nav-button:hover{
+  text-shadow:0 3px 0 rgba(0,0,0,.5),0 7px 16px rgba(75,226,119,.25);
+}
+
+
+/* Final header orientation: no header shape; controls float above the page */
+.nav{
+  background:transparent !important;
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+.nav-right .theme-toggle,.nav-right .nav-button{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  transform:translateY(-1px);
+  text-shadow:0 1px 0 rgba(255,255,255,.55),0 3px 5px rgba(17,21,17,.20);
+}
+html[data-theme="dark"] .nav-right .theme-toggle,html[data-theme="dark"] .nav-right .nav-button{
+  text-shadow:0 1px 0 rgba(255,255,255,.10),0 3px 6px rgba(0,0,0,.65);
+}
+.nav-right .theme-toggle:hover,.nav-right .nav-button:hover{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  transform:translateY(-3px);
+  text-shadow:0 1px 0 rgba(255,255,255,.60),0 5px 9px rgba(85,173,69,.28);
+}
+html[data-theme="dark"] .nav-right .theme-toggle:hover,html[data-theme="dark"] .nav-right .nav-button:hover{
+  text-shadow:0 1px 0 rgba(255,255,255,.12),0 5px 10px rgba(75,226,119,.30);
+}
+
+/* Final auth-header uniformity fix: merge header completely with page background */
+.nav{
+  background:transparent !important;
+  background-color:transparent !important;
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+  border:0 !important;
+  border-bottom:0 !important;
+  box-shadow:none !important;
+  outline:0 !important;
+}
+.nav::before,.nav::after{content:none !important;display:none !important;}
+</style></head><body>
+<nav class="nav"><a class="brand" href="index.html"><img class="brand-logo" src="gymodoro-logo.png" alt="Gymodoro logo">Gymodoro</a><div class="nav-right"><button class="theme-toggle" type="button" data-theme-toggle>☾</button><a class="nav-button" href="signup.html">Sign Up</a></div></nav>
+<main class="main"><section class="card"><div class="title"><h1>Welcome back</h1><p>Sign in to continue your productive rhythm.</p></div>
+        <form class="form" onsubmit="return false">
+          <div class="field"><label for="email">Email Address</label><input id="email" placeholder="john@example.com" type="email"></div>
+          <div class="field"><label for="password">Password</label><input id="password" placeholder="••••••••" type="password"></div>
+          <button class="primary" type="submit">Sign In</button>
+        </form>
+        <div class="divider">or</div>
+        <button class="alt" type="button">↪ <span>Sign in with Google</span></button>
+        <button class="alt" type="button">▣ <span>Sign in with Apple</span></button>
+        <div class="switch">Don't have an account?<a href="signup.html">Sign Up</a></div>
+        </section></main>
+<footer class="footer"><a class="brand" href="index.html"><img class="brand-logo" src="gymodoro-logo.png" alt="Gymodoro logo">Gymodoro</a><span>© 2026 Gymodoro. All rights reserved.</span><span>Legal &nbsp; Support &nbsp; Privacy &nbsp; Terms</span></footer>
+
+<script>
+(function(){
+  const saved=localStorage.getItem('gymodoro-theme')||'light';
+  document.documentElement.dataset.theme=saved;
+  function update(){
+    document.querySelectorAll('[data-theme-toggle]').forEach(b=>{
+      b.textContent=document.documentElement.dataset.theme==='dark'?'☀':'☾';
+      b.setAttribute('aria-label',document.documentElement.dataset.theme==='dark'?'Switch to light theme':'Switch to dark theme');
+    });
+  }
+  document.addEventListener('click',function(e){
+    const b=e.target.closest('[data-theme-toggle]');
+    if(!b)return;
+    const next=document.documentElement.dataset.theme==='dark'?'light':'dark';
+    document.documentElement.dataset.theme=next;
+    localStorage.setItem('gymodoro-theme',next);
+    update();
+  });
+  document.addEventListener('DOMContentLoaded',update);
+})();
+</script>
+</body></html>

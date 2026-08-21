@@ -1,0 +1,208 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gymodoro — Work. Move. Repeat.</title><meta name="description" content="Gymodoro turns productivity breaks into active breaks."><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet"><style>
+:root{--bg:#f6f7f3;--ink:#111511;--muted:#697169;--line:#dfe5dc;--g:#8ee56f;--gd:#55ad45}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif}a{text-decoration:none;color:inherit}.wrap{max-width:1440px;margin:auto;padding:0 34px}.nav{height:88px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.brand{font-weight:800;font-size:20px;display:flex;gap:10px;align-items:center}.logo{background:var(--ink);color:var(--g);width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-family:Manrope}.links{display:flex;gap:32px;color:#687068;font-size:14px}.cta{background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:99px;font-size:14px}.cta span{color:var(--g)}section{padding:110px 5%}.hero{min-height:650px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}.eyebrow,.kicker{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#687268}.eyebrow{display:flex;align-items:center;gap:9px}.dot{width:7px;height:7px;border-radius:50%;background:#63c653;box-shadow:0 0 0 6px #e2f5dc}.hero h1{font:800 clamp(64px,8vw,110px)/.88 Manrope;letter-spacing:-.075em;margin:20px 0}.hero h1 em{color:var(--gd);font-style:normal}.lead{max-width:570px;font-size:18px;line-height:1.65;color:var(--muted)}.actions{display:flex;align-items:center;gap:22px;margin-top:30px}.primary{background:var(--ink);color:var(--bg);padding:16px 22px;border-radius:99px;font-weight:700;font-size:14px}.primary b{color:var(--g);font-size:18px;margin-left:20px}.secondary{font-size:14px;font-weight:700}.hero-art{height:500px;position:relative;display:grid;place-items:center}.glow{position:absolute;width:430px;height:430px;background:radial-gradient(circle,#d8f8cc,transparent 67%)}.timer{width:min(420px,82%);background:#111611;color:#fff;border-radius:28px;padding:26px;box-shadow:0 30px 80px #24352425;transform:rotate(2deg)}.top,.bottom{display:flex;justify-content:space-between;color:#8b958b;font-size:10px;letter-spacing:.14em}.active{color:var(--g)}.label{margin-top:60px;color:#7e897f;font-size:11px;letter-spacing:.18em}.time{font:800 78px/1 Manrope;letter-spacing:-.07em;margin:12px 0 20px}.time span{color:#849084}.bar{height:6px;background:#2a322b;border-radius:9px}.bar i{display:block;width:73%;height:100%;background:var(--g);border-radius:9px}.bottom{margin-top:14px;letter-spacing:0}.float{position:absolute;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 18px 50px #1d321d19;padding:16px;display:flex;align-items:center;gap:12px}.move{right:1%;bottom:55px;transform:rotate(-4deg);width:250px}.move .ico{width:42px;height:42px;border-radius:13px;background:#eaf9e4;display:grid;place-items:center;color:var(--gd);font-size:22px}.float small{display:block;color:#899289;font-size:9px;letter-spacing:.13em}.float strong{font-size:13px}.streak{left:2%;top:70px;border-radius:99px;font-size:11px}.streak b{margin-left:8px}.problem{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}h2{font:800 clamp(42px,5vw,70px)/.98 Manrope;letter-spacing:-.065em;margin:16px 0}h2 em{font-style:normal;color:var(--gd)}.flow{display:flex;align-items:center;margin-top:60px;overflow:auto}.step{min-width:150px}.step b{font-size:10px;color:#9aa39a}.step strong{display:block;font:700 22px Manrope;margin:10px 0 3px}.step small{color:#899189;font-size:12px}.line{height:1px;background:#cbd3c9;flex:1;margin:0 15px;min-width:30px}.callout{text-align:center;margin-top:70px;color:#606960;font-size:22px;line-height:1.6}.callout strong{font:800 34px Manrope;color:var(--ink)}.loop{display:grid;grid-template-columns:1fr .9fr;gap:70px;align-items:center}.sub{color:var(--muted);line-height:1.7;max-width:510px}.list{margin-top:35px;border-top:1px solid var(--line)}.item{display:flex;gap:16px;align-items:center;padding:18px 10px;border-bottom:1px solid var(--line)}.item:hover,.item.sel{background:#fff;border-radius:15px}.item>span{font-size:10px;color:#9aa29a}.item div{flex:1}.item b{font:700 17px Manrope}.item small{display:block;color:#818a82;font-size:12px;margin-top:4px}.item i{font-style:normal;font-size:23px}.circle{height:460px;position:relative;display:grid;place-items:center}.r{position:absolute;border:1px solid #d2dbd0;border-radius:50%}.r1{width:420px;height:420px;border-style:dashed}.r2{width:315px;height:315px}.r3{width:215px;height:215px;background:#f0f7ed}.core{width:150px;height:150px;border-radius:50%;background:#111611;color:#fff;display:grid;place-content:center;text-align:center;z-index:2}.core strong{font:800 23px Manrope;color:#baf49f;margin:8px}.core small{font-size:7px;letter-spacing:.1em;color:#8b958b}.orb{position:absolute;width:48px;height:48px;border-radius:50%;background:#fff;border:1px solid var(--line);display:grid;place-items:center;box-shadow:0 8px 24px #1d321d15}.o1{top:35px}.o2{right:20px}.o3{bottom:35px}.pillars{background:#eef2ec}.center{text-align:center}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:55px}.card{background:#fff;border:1px solid var(--line);border-radius:26px;padding:28px;min-height:370px}.card.dark{background:#142015;color:#fff;border-color:#142015}.num{font-size:10px;color:#9ca59c}.icon{font-size:38px;margin:45px 0 18px}.card h3{font:800 24px Manrope;margin:0}.card p{font-size:13px;line-height:1.6;color:#747d75}.dark p{color:#9aa99a}.card ul{padding:0;margin-top:25px;list-style:none}.card li{padding:10px 0;border-top:1px solid #e5eae3;font-size:12px}.dark li{border-color:#2d3a2d}.card li:before{content:'✓';color:#63c653;margin-right:8px}.voice{display:grid;grid-template-columns:1fr .85fr;gap:70px;align-items:center}.voice h2 span{color:var(--gd)}.quote{margin-top:30px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;gap:14px;align-items:center}.quote div{flex:1}.quote small{display:block;color:#8a938a;font-size:9px;letter-spacing:.14em;margin-bottom:5px}.quote b{font-size:12px}.ai{background:#111611;color:#fff;border-radius:28px;padding:25px}.aihead{display:flex;justify-content:space-between;color:#899388;font-size:9px;letter-spacing:.14em}.wave{height:125px;display:flex;gap:7px;align-items:center;justify-content:center}.wave i{width:4px;height:30px;background:var(--g);border-radius:4px;animation:w 1s ease-in-out infinite}.wave i:nth-child(2n){height:50px}.wave i:nth-child(3n){height:70px}@keyframes w{50%{transform:scaleY(.45);opacity:.5}}.response{background:#1d251d;border-radius:15px;padding:14px;display:flex;gap:12px;align-items:center}.response strong{font-size:12px}.ai button{width:100%;border:0;border-radius:14px;padding:13px;margin-top:12px;background:var(--g);font-weight:800;cursor:pointer}.final{margin:40px 0 70px;border-radius:35px;min-height:500px;background:#111611;color:#fff;text-align:center;display:grid;place-content:center;position:relative;overflow:hidden}.final:before{content:'';position:absolute;width:550px;height:550px;left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#8ee56f35,transparent 68%)}.final>*{position:relative}.final .kicker{color:#94a194}.final p{color:#9ca69b;line-height:1.6;margin-bottom:28px}.final .primary{background:#fff;color:#111611;margin:auto}.footer{border-top:1px solid var(--line);height:100px;display:flex;align-items:center;justify-content:space-between;color:#858e85;font-size:12px}.footer .brand{color:var(--ink);font-size:16px}
+@media(max-width:900px){.links{display:none}.hero,.loop,.voice{grid-template-columns:1fr}.hero-art{height:430px}.cards{grid-template-columns:1fr}.circle{order:-1;height:370px}.r1{width:330px;height:330px}.r2{width:250px;height:250px}.r3{width:175px;height:175px}.wrap{padding:0 18px}.footer{height:auto;padding:25px 0;gap:16px;flex-wrap:wrap}}@media(max-width:560px){section{padding:80px 2%}.hero h1{font-size:66px}.lead{font-size:15px}.actions{flex-direction:column;align-items:flex-start}.timer{width:95%}.move{right:-3%;bottom:25px}.streak{left:-2%;top:45px}.callout strong{font-size:27px}.footer{font-size:11px}}
+
+/* Gymodoro shared light/dark theme */
+html[data-theme="dark"]{
+  --bg:#0c0a09;--ink:#fafaf9;--muted:#a8a29e;--line:#292524;
+  --g:#4be277;--gd:#22c55e;--surface:#1c1917;--surface2:#292524;
+}
+html[data-theme="light"]{
+  --bg:#f6f7f3;--ink:#111511;--muted:#697169;--line:#dfe5dc;
+  --g:#8ee56f;--gd:#55ad45;--surface:#ffffff;--surface2:#f0f3ee;
+}
+body{transition:background-color .25s ease,color .25s ease}
+.theme-toggle{border:0;background:transparent;color:var(--ink);width:42px;height:42px;border-radius:999px;display:grid;place-items:center;cursor:pointer;font-size:18px}
+.theme-toggle:hover{border-color:var(--gd)}
+.nav-actions{display:flex;align-items:center;gap:10px}
+.auth-link{border:0;background:transparent;padding:11px 17px;border-radius:99px;font-size:14px}
+.auth-link:hover{border-color:var(--gd)}
+
+/* Theme consistency fixes */
+.brand-logo{width:56px;height:48px;object-fit:contain;display:block}
+html[data-theme="dark"] .links,
+html[data-theme="dark"] .eyebrow,
+html[data-theme="dark"] .kicker{color:#a8a29e}
+html[data-theme="dark"] .dot{box-shadow:0 0 0 6px #263626}
+html[data-theme="dark"] .glow{background:radial-gradient(circle,#203b22,transparent 67%)}
+html[data-theme="dark"] .timer{background:#111611;color:#fff}
+html[data-theme="dark"] .float{background:#1c1917;border-color:#292524;color:#fafaf9}
+html[data-theme="dark"] .move .ico{background:#243a25}
+html[data-theme="dark"] .flow .line{background:#3d473d}
+html[data-theme="dark"] .item:hover,
+html[data-theme="dark"] .item.sel{background:#1c1917}
+html[data-theme="dark"] .r{border-color:#3d473d}
+html[data-theme="dark"] .r3{background:#1c2a1d}
+html[data-theme="dark"] .orb{background:#1c1917;border-color:#292524}
+html[data-theme="dark"] .pillars{background:#111611}
+html[data-theme="dark"] .card{background:#1c1917;border-color:#292524;color:#fafaf9}
+html[data-theme="dark"] .card.dark{background:#142015;border-color:#142015}
+html[data-theme="dark"] .card p{color:#a8a29e}
+html[data-theme="dark"] .card li{border-color:#2d3a2d}
+html[data-theme="dark"] .quote{background:#1c1917;border-color:#292524;color:#fafaf9}
+html[data-theme="dark"] .final{background:#111611}
+html[data-theme="dark"] .footer .brand{color:#fafaf9}
+
+/* Light-theme corrections for elements that previously used fixed dark colors */
+html[data-theme="light"] .timer{background:#111611;color:#fff}
+html[data-theme="light"] .final{background:#111611;color:#fff}
+html[data-theme="light"] .card.dark{background:#142015;color:#fff}
+
+/* Running active-break carousel */
+.activity-carousel{padding-top:80px;padding-bottom:80px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden}
+.activity-head{display:flex;align-items:end;justify-content:space-between;gap:30px;margin-bottom:35px}
+.activity-head h2{margin-bottom:0}
+.activity-head p{max-width:330px;color:var(--muted);line-height:1.6;font-size:14px}
+.activity-window{width:100%;overflow:hidden;mask-image:linear-gradient(to right,transparent,#000 7%,#000 93%,transparent)}
+.activity-track{display:flex;width:max-content;gap:16px;animation:activity-scroll 34s linear infinite}
+.activity-card{width:245px;min-height:110px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;display:flex;align-items:center;gap:15px;flex-shrink:0}
+.activity-card>span{width:48px;height:48px;border-radius:15px;background:var(--surface2);display:grid;place-items:center;font-size:24px}
+.activity-card strong{display:block;font:700 16px Manrope;color:var(--ink)}
+.activity-card small{display:block;margin-top:5px;color:var(--muted);font-size:11px;line-height:1.4}
+@keyframes activity-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.activity-track:hover{animation-play-state:paused}
+@media(max-width:700px){.activity-head{align-items:flex-start;flex-direction:column}.activity-head p{margin:0}.activity-carousel{padding-top:65px;padding-bottom:65px}}
+
+/* Requested glass header + subtle Gymodoro hover motion */
+.nav{
+  background:color-mix(in srgb, var(--bg) 68%, transparent);
+  -webkit-backdrop-filter:blur(18px) saturate(135%);
+  backdrop-filter:blur(18px) saturate(135%);
+  border:none;
+  box-shadow:0 10px 30px rgba(17,21,17,.07);
+}
+html[data-theme="dark"] .nav{background:rgba(12,10,9,.62);border:none;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.nav .links a,.secondary,.auth-link,.cta,.primary,.ai button,.theme-toggle{transition:transform .22s ease,box-shadow .22s ease,color .22s ease,border-color .22s ease,background-color .22s ease}
+.nav .links a:hover,.secondary:hover{transform:translateY(-2px);color:var(--gd)}
+.auth-link:hover,.cta:hover,.primary:hover,.ai button:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(85,173,69,.18)}
+.theme-toggle:hover{transform:translateY(-2px) scale(1.04)}
+
+
+/* Header orientation: fully merged with page background; raised 3D controls without boxes */
+.nav{
+  background:transparent !important;
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+  border:none !important;
+  box-shadow:none !important;
+}
+.nav-actions .theme-toggle,
+.nav-actions .auth-link,
+.nav-right .theme-toggle,
+.nav-right .nav-button{
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  text-shadow:0 2px 0 rgba(0,0,0,.12),0 4px 10px rgba(0,0,0,.10);
+}
+html[data-theme="dark"] .nav-actions .theme-toggle,
+html[data-theme="dark"] .nav-actions .auth-link,
+html[data-theme="dark"] .nav-right .theme-toggle,
+html[data-theme="dark"] .nav-right .nav-button{
+  text-shadow:0 2px 0 rgba(0,0,0,.45),0 5px 12px rgba(0,0,0,.28);
+}
+.nav-actions .theme-toggle:hover,
+.nav-actions .auth-link:hover,
+.nav-right .theme-toggle:hover,
+.nav-right .nav-button:hover{
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  transform:translateY(-3px) !important;
+  text-shadow:0 3px 0 rgba(0,0,0,.14),0 7px 14px rgba(85,173,69,.22);
+}
+html[data-theme="dark"] .nav-actions .theme-toggle:hover,
+html[data-theme="dark"] .nav-actions .auth-link:hover,
+html[data-theme="dark"] .nav-right .theme-toggle:hover,
+html[data-theme="dark"] .nav-right .nav-button:hover{
+  text-shadow:0 3px 0 rgba(0,0,0,.5),0 7px 16px rgba(75,226,119,.25);
+}
+
+
+/* Final header orientation: no header shape; controls float above the page */
+.nav{
+  background:transparent !important;
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+.nav-actions .theme-toggle,.nav-actions .auth-link{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  transform:translateY(-1px);
+  text-shadow:0 1px 0 rgba(255,255,255,.55),0 3px 5px rgba(17,21,17,.20);
+}
+html[data-theme="dark"] .nav-actions .theme-toggle,html[data-theme="dark"] .nav-actions .auth-link{
+  text-shadow:0 1px 0 rgba(255,255,255,.10),0 3px 6px rgba(0,0,0,.65);
+}
+.nav-actions .theme-toggle:hover,.nav-actions .auth-link:hover{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  transform:translateY(-3px);
+  text-shadow:0 1px 0 rgba(255,255,255,.60),0 5px 9px rgba(85,173,69,.28);
+}
+html[data-theme="dark"] .nav-actions .theme-toggle:hover,html[data-theme="dark"] .nav-actions .auth-link:hover{
+  text-shadow:0 1px 0 rgba(255,255,255,.12),0 5px 10px rgba(75,226,119,.30);
+}
+</style></head><body><div class="wrap"><header class="nav"><a class="brand" href="#top"><img class="brand-logo" src="gymodoro-logo.png" alt="Gymodoro logo">Gymodoro</a><nav class="links"><a href="#why">Why Gymodoro</a><a href="#loop">The Loop</a><a href="#features">Features</a></nav><div class="nav-actions"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle theme">☾</button><a class="auth-link" href="signin.html">Sign In</a><a class="cta" href="signup.html">Start focusing <span>↗</span></a></div></header><main id="top">
+<section class="hero"><div><div class="eyebrow"><span class="dot"></span> Productivity, redesigned for your body</div><h1>Work.<br><em>Move.</em><br>Repeat.</h1><p class="lead">Gymodoro turns the breaks you already take into opportunities to move — so you can stay focused without sacrificing your health.</p><div class="actions" id="start"><a class="primary" href="#loop">Start your first session <b>→</b></a><a class="secondary" href="#why">See how it works ↓</a></div></div><div class="hero-art"><div class="glow"></div><div class="timer"><div class="top"><span>GYMODORO</span><span class="active">● ACTIVE</span></div><div class="label">FOCUS SESSION</div><div class="time">24<span>:37</span></div><div class="bar"><i></i></div><div class="bottom"><span>Deep work</span><span>25 min</span></div></div><div class="float move"><div class="ico">↗</div><div><small>NEXT BREAK</small><strong>Move for 5 min</strong></div>→</div><div class="float streak">♥ Active break streak <b>07</b></div></div></section>
+<section class="problem" id="why"><span class="kicker">THE PROBLEM</span><h2>We're trying to become<br><em>more productive</em> while sitting more.</h2><div class="flow"><div class="step"><b>01</b><strong>Work</strong><small>Deep focus</small></div><div class="line"></div><div class="step"><b>02</b><strong>Exhaustion</strong><small>Need a break</small></div><div class="line"></div><div class="step"><b>03</b><strong>Scroll</strong><small>“Just 5 minutes”</small></div><div class="line"></div><div class="step"><b>04</b><strong>Sit more</strong><small>Back to work</small></div></div><div class="callout">People don't necessarily need <b>more</b> breaks.<br><strong>They need better breaks.</strong></div></section>
+
+<section class="activity-carousel" id="active-breaks">
+  <div class="activity-head">
+    <div>
+      <span class="kicker">ACTIVE BREAKS</span>
+      <h2>Don't scroll. <em>Move.</em></h2>
+    </div>
+    <p>Short activities for the break you already have.</p>
+  </div>
+  <div class="activity-window">
+    <div class="activity-track">
+      <article class="activity-card"><span>🚶</span><div><strong>Short Walk</strong><small>Get moving for 5 minutes</small></div></article>
+      <article class="activity-card"><span>🧘</span><div><strong>Stretching</strong><small>Reset your posture and muscles</small></div></article>
+      <article class="activity-card"><span>🦵</span><div><strong>Squats</strong><small>A quick lower-body boost</small></div></article>
+      <article class="activity-card"><span>💪</span><div><strong>Push-ups</strong><small>Wake up your upper body</small></div></article>
+      <article class="activity-card"><span>🏃</span><div><strong>Quick Cardio</strong><small>Raise your energy in minutes</small></div></article>
+      <article class="activity-card"><span>🧍</span><div><strong>Mobility</strong><small>Loosen up and move better</small></div></article>
+      <article class="activity-card"><span>👀</span><div><strong>Eye Relaxation</strong><small>Give your eyes a real break</small></div></article>
+      <article class="activity-card"><span>🌬️</span><div><strong>Breathing</strong><small>Slow down and recover</small></div></article>
+      <article class="activity-card"><span>🚶</span><div><strong>Short Walk</strong><small>Get moving for 5 minutes</small></div></article>
+      <article class="activity-card"><span>🧘</span><div><strong>Stretching</strong><small>Reset your posture and muscles</small></div></article>
+      <article class="activity-card"><span>🦵</span><div><strong>Squats</strong><small>A quick lower-body boost</small></div></article>
+      <article class="activity-card"><span>💪</span><div><strong>Push-ups</strong><small>Wake up your upper body</small></div></article>
+      <article class="activity-card"><span>🏃</span><div><strong>Quick Cardio</strong><small>Raise your energy in minutes</small></div></article>
+      <article class="activity-card"><span>🧍</span><div><strong>Mobility</strong><small>Loosen up and move better</small></div></article>
+      <article class="activity-card"><span>👀</span><div><strong>Eye Relaxation</strong><small>Give your eyes a real break</small></div></article>
+      <article class="activity-card"><span>🌬️</span><div><strong>Breathing</strong><small>Slow down and recover</small></div></article>
+    </div>
+  </div>
+</section>
+<section class="loop" id="loop"><div><span class="kicker">THE GYMODORO LOOP</span><h2>Focus that <em>moves</em> with you.</h2><p class="sub">Your productivity break is already there. Gymodoro makes it active.</p><div class="list"><div class="item sel"><span>01</span><div><b>Focus</b><small>Pomodoro sessions & distraction protection</small></div><i>🧠</i></div><div class="item"><span>02</span><div><b>Move</b><small>Short, achievable activities for your break</small></div><i>🏃</i></div><div class="item"><span>03</span><div><b>Recover</b><small>Reset your body, eyes and breathing</small></div><i>⚡</i></div><div class="item"><span>04</span><div><b>Repeat</b><small>Build a sustainable rhythm for better work</small></div><i>🔁</i></div></div></div><div class="circle"><div class="r r1"></div><div class="r r2"></div><div class="r r3"></div><div class="core"><small>GYMODORO</small><strong>FOCUS</strong><small>→ MOVE → RECOVER →</small></div><div class="orb o1">🧠</div><div class="orb o2">🏃</div><div class="orb o3">⚡</div></div></section>
+<section class="pillars" id="features"><div class="center"><span class="kicker">THREE PILLARS</span><h2>Everything works toward<br><em>a healthier rhythm.</em></h2></div><div class="cards"><article class="card"><span class="num">01</span><div class="icon">🧠</div><h3>FOCUS</h3><p>Protect your attention and make every work session count.</p><ul><li>Pomodoro sessions</li><li>AI Distraction Shield</li><li>“Convince the Bot” access</li></ul></article><article class="card dark"><span class="num">02</span><div class="icon">🏃</div><h3>MOVE</h3><p>Turn five minutes of downtime into five minutes of movement.</p><ul><li>Personalized active breaks</li><li>Walks, stretches & mobility</li><li>Activity tracking</li></ul></article><article class="card"><span class="num">03</span><div class="icon">📊</div><h3>ADAPT</h3><p>Understand your patterns and build a rhythm that fits you.</p><ul><li>Focus & activity analytics</li><li>Distraction patterns</li><li>AI scheduling insights</li></ul></article></div></section>
+<section class="voice"><div><span class="kicker">SPEAK. PLAN. MOVE.</span><h2>Let your voice<br>start the <em>loop.</em></h2><p class="sub">Say what needs to get done. Gymodoro extracts your tasks, prioritizes them, and gets you into focus — then knows when it's time to move.</p><div class="quote"><span>🎙️</span><div><small>TRY SAYING</small><b>“Finish the presentation, review the ML model, and call my teammate.”</b></div><span>→</span></div></div><div class="ai"><div class="aihead"><span>GYMODORO AI</span><span class="active">● LISTENING</span></div><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="response">✓ <strong>3 tasks captured — ready to build your focus plan.</strong></div><button id="plan">Build my plan →</button></div></section>
+<section class="final"><span class="kicker">A BETTER WAY TO BE PRODUCTIVE</span><h2>Don't just take a break.<br><em>Move.</em></h2><p>We're not trying to make you work more.<br>We're helping you work sustainably.</p><a class="primary" href="#top">Enter Gymodoro <b>→</b></a></section></main><footer class="footer"><div class="brand"><img class="brand-logo" src="gymodoro-logo.png" alt="Gymodoro logo">Gymodoro</div><span>Work. Move. Repeat.</span><span>© 2026 Gymodoro</span></footer></div><script>document.querySelectorAll('.item').forEach(x=>x.onclick=()=>{document.querySelectorAll('.item').forEach(y=>y.classList.remove('sel'));x.classList.add('sel')});document.getElementById('plan').onclick=e=>{e.currentTarget.textContent='Plan created ✓';e.currentTarget.style.background='#baf49f'};</script>
+<script>
+(function(){
+  const saved=localStorage.getItem('gymodoro-theme')||'light';
+  document.documentElement.dataset.theme=saved;
+  function update(){
+    document.querySelectorAll('[data-theme-toggle]').forEach(b=>{
+      b.textContent=document.documentElement.dataset.theme==='dark'?'☀':'☾';
+      b.setAttribute('aria-label',document.documentElement.dataset.theme==='dark'?'Switch to light theme':'Switch to dark theme');
+    });
+  }
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('[data-theme-toggle]');
+    if(!b)return;
+    const next=document.documentElement.dataset.theme==='dark'?'light':'dark';
+    document.documentElement.dataset.theme=next;
+    localStorage.setItem('gymodoro-theme',next);
+    update();
+  });
+  document.addEventListener('DOMContentLoaded',update);
+})();
+</script>
+</body></html>
