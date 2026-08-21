@@ -9,10 +9,9 @@ export default function ThreePillars() {
       desc: "Protect your attention and make every work session count.",
       features: [
         "Customizable Pomodoro work blocks",
-        "AI Distraction Shield & classifier",
-        "“Convince the Bot” temporary access",
+        "Focus, short-break & long-break modes",
+        "Quick add-time (+1/+5/+10), pause/resume/reset",
       ],
-      isDark: false,
     },
     {
       num: "02",
@@ -24,7 +23,6 @@ export default function ThreePillars() {
         "Guided desk stretches & mobility sets",
         "Activity streaks and break logs",
       ],
-      isDark: true,
     },
     {
       num: "03",
@@ -36,12 +34,11 @@ export default function ThreePillars() {
         "Daily energy & active hours pattern",
         "AI-driven scheduling recommendations",
       ],
-      isDark: false,
     },
   ];
 
   return (
-    <section id="features" className="py-20 md:py-28 bg-background">
+    <section id="features" className="py-20 md:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
@@ -62,19 +59,11 @@ export default function ThreePillars() {
           {pillars.map((pillar) => (
             <Card
               key={pillar.num}
-              className={`rounded-3xl p-8 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl flex flex-col justify-between border ${
-                pillar.isDark
-                  ? "bg-[#142015] text-white border-[#243a25] shadow-lg shadow-emerald-950/20"
-                  : "bg-card text-card-foreground border-border"
-              }`}
+              className="rounded-3xl p-8 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl flex flex-col justify-between border bg-card/80 backdrop-blur-md text-card-foreground border-border/60"
             >
               <div>
                 <div className="flex justify-between items-center mb-8">
-                  <span
-                    className={`text-xs font-mono font-bold ${
-                      pillar.isDark ? "text-emerald-400/80" : "text-muted-foreground"
-                    }`}
-                  >
+                  <span className="text-xs font-mono font-bold text-muted-foreground">
                     {pillar.num}
                   </span>
                   <span className="text-4xl">{pillar.icon}</span>
@@ -87,11 +76,7 @@ export default function ThreePillars() {
                 </CardHeader>
 
                 <CardContent className="p-0">
-                  <p
-                    className={`text-sm leading-relaxed mb-8 ${
-                      pillar.isDark ? "text-[#a8bba8]" : "text-muted-foreground"
-                    }`}
-                  >
+                  <p className="text-sm leading-relaxed mb-8 text-muted-foreground">
                     {pillar.desc}
                   </p>
                 </CardContent>
@@ -102,9 +87,7 @@ export default function ThreePillars() {
                 {pillar.features.map((item, idx) => (
                   <li
                     key={idx}
-                    className={`text-xs sm:text-sm flex items-start gap-2.5 ${
-                      pillar.isDark ? "text-slate-200" : "text-foreground"
-                    }`}
+                    className="text-xs sm:text-sm flex items-start gap-2.5 text-foreground"
                   >
                     <span className="text-emerald-500 font-bold flex-shrink-0">✓</span>
                     <span>{item}</span>

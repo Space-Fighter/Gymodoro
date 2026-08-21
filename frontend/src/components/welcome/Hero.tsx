@@ -60,34 +60,34 @@ export default function Hero() {
             </div>
 
             {/* Main 3D Tilted Pomodoro Timer Card */}
-            <div className="w-[320px] sm:w-[380px] bg-[#111611] text-white border border-[#243524] rounded-3xl p-6 sm:p-8 shadow-2xl shadow-emerald-950/20 transform rotate-2 hover:rotate-0 transition-transform duration-300">
-              
+            <div className="w-[320px] sm:w-[380px] bg-background/70 backdrop-blur-xl text-foreground border border-border/60 rounded-3xl p-6 sm:p-8 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-300">
+
               {/* Header */}
-              <div className="flex justify-between items-center text-[10px] tracking-widest text-[#8b958b] font-bold uppercase mb-12">
+              <div className="flex justify-between items-center text-[10px] tracking-widest text-muted-foreground font-bold uppercase mb-12">
                 <span>GYMODORO</span>
-                <span className="text-emerald-400 flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
                   ACTIVE
                 </span>
               </div>
 
               {/* Label */}
-              <div className="text-[11px] font-bold tracking-widest text-[#7e897f] uppercase">
+              <div className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">
                 FOCUS SESSION
               </div>
 
               {/* Time Display */}
-              <div className="font-heading font-extrabold text-6xl sm:text-7xl tracking-tighter my-3 text-white">
-                24<span className="text-[#849084]">:37</span>
+              <div className="font-heading font-extrabold text-6xl sm:text-7xl tracking-tighter my-3 text-foreground">
+                24<span className="text-muted-foreground">:37</span>
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full h-2 bg-[#2a322b] rounded-full overflow-hidden mb-4">
-                <div className="h-full bg-emerald-400 rounded-full w-[74%]" />
+              <div className="w-full h-2 bg-border rounded-full overflow-hidden mb-4">
+                <div className="h-full bg-emerald-500 dark:bg-emerald-400 rounded-full w-[74%]" />
               </div>
 
               {/* Bottom Footer */}
-              <div className="flex justify-between items-center text-xs text-[#8b958b] font-medium">
+              <div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
                 <span>Deep work</span>
                 <span>25 min</span>
               </div>

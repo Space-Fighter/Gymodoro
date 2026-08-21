@@ -1,9 +1,12 @@
 import { useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "@/assets/gymodoro-logo.png";
-import ModeToggle from "@/components/mode-toggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
+import { getBackgroundById } from "@/components/timer/backgrounds";
+import GoogleIcon from "@/components/GoogleIcon";
+
+const CAFE_BACKGROUND = getBackgroundById("rainy-cafe");
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -39,33 +42,25 @@ export default function SignIn() {
   const { promptGoogleSignIn } = useGoogleSignIn(handleGoogleCredential);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-emerald-500/30">
+    <div className="relative isolate min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-emerald-500/30">
+      {/* Cafe background — fixed behind the whole page, with a scrim for legibility */}
+      <img
+        src={CAFE_BACKGROUND.imageUrl}
+        alt={CAFE_BACKGROUND.name}
+        className="fixed inset-0 -z-10 h-full w-full object-cover"
+      />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-background/30 via-background/50 to-background/70" />
 
-      {/* Auth Navbar */}
-      <header className="w-full px-6 sm:px-12 h-20 flex items-center justify-between border-b border-border/20 backdrop-blur-sm">
-        <Link
-          to="/welcome"
-          className="flex items-center gap-3 font-extrabold text-xl tracking-tight text-foreground transition-transform duration-200 hover:-translate-y-0.5"
-        >
-          <img
-            src={logo}
-            alt="Gymodoro Logo"
-            className="w-10 h-10 object-contain rounded-xl"
-          />
-          <span className="font-heading font-extrabold text-2xl tracking-tight">
-            Gymodoro
-          </span>
-        </Link>
-        <div className="flex items-center gap-3">
-          <ModeToggle />
-          <Link
-            to="/signup"
-            className="text-sm font-semibold px-4 py-2 rounded-full border border-border hover:border-primary text-foreground transition-all duration-200"
-          >
-            Sign Up
-          </Link>
-        </div>
-      </header>
+      {/* Logo — matches the Timer page's floating logo treatment */}
+      <Link
+        to="/welcome"
+        className="absolute top-0 left-0 z-30 flex items-center gap-1 transition-transform duration-200 hover:-translate-y-0.5"
+      >
+        <img src={logo} alt="Gymodoro" className="w-[135px] h-[135px] object-contain" />
+        <span className="text-foreground font-extrabold tracking-wide text-2xl font-poppins">
+          GYMODORO
+        </span>
+      </Link>
 
       {/* Main Form Center */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-8 relative overflow-hidden">
@@ -74,7 +69,7 @@ export default function SignIn() {
           <div className="w-[450px] h-[450px] bg-emerald-500/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 sm:p-10 shadow-2xl relative z-10">
+        <div className="w-full max-w-md bg-card/70 backdrop-blur-xl border border-border/60 rounded-2xl p-6 sm:p-10 shadow-2xl relative z-10">
           <div className="text-center mb-8">
             <h1 className="font-heading font-extrabold text-3xl text-foreground tracking-tight mb-2">
               Welcome back
@@ -141,7 +136,7 @@ export default function SignIn() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
-            <span className="relative bg-card px-4 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+            <span className="relative bg-card/70 backdrop-blur-xl px-4 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               or continue with
             </span>
           </div>
@@ -154,7 +149,7 @@ export default function SignIn() {
               disabled={isLoading}
               className="w-full py-2.5 px-4 rounded-lg border border-border hover:border-emerald-500/60 bg-background/50 hover:bg-secondary text-foreground text-sm font-medium flex items-center justify-center gap-3 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>🌐</span>
+              <GoogleIcon className="w-4 h-4" />
               <span>Sign in with Google</span>
             </button>
           </div>
@@ -172,7 +167,7 @@ export default function SignIn() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full py-6 px-6 sm:px-12 border-t border-border/20 flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-3">
+      <footer className="w-full py-6 px-6 sm:px-12 border-t border-border/20 bg-background/40 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-3">
         <div className="flex items-center gap-2">
           <img src={logo} alt="Logo" className="w-5 h-5 object-contain" />
           <span>Gymodoro</span>
