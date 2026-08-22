@@ -14,6 +14,7 @@ declare global {
     getCurrentTime(): number;
     setPlaybackQuality(quality: string): void;
     getPlaybackQuality(): string;
+    getIframe(): HTMLIFrameElement;
     destroy(): void;
   }
 

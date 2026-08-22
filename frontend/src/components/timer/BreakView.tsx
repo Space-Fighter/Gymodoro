@@ -54,24 +54,24 @@ export default function BreakView({
 }: Props) {
   return (
     <div
-      className="absolute inset-0 flex flex-col z-10 pt-10 px-6"
+      className="absolute inset-0 flex flex-col z-10 pt-36 px-6"
       style={{ left: contentLeft, transition: "left 0.25s ease" }}
     >
       {/* Mode Dots */}
-      <div className="flex items-center justify-center gap-4 mb-8">
+      <div className="absolute top-[60px] left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 z-20">
         {modes.map((mode) => (
           <button
             key={mode.id}
             onClick={() => onSwitchMode(mode.id)}
-            className="w-14 h-14 rounded-full border-none cursor-pointer p-0 bg-transparent flex items-center justify-center hover:opacity-80 transition-opacity"
+            className="w-8 h-8 rounded-full border-none cursor-pointer p-0 bg-transparent flex items-center justify-center hover:opacity-80 transition-opacity"
             type="button"
           >
             <span
               className={cn(
                 "rounded-full block pointer-events-none transition-all",
                 timerMode === mode.id
-                  ? "w-7 h-7 bg-white shadow-[0_0_0_3px_rgba(255,255,255,0.9)]"
-                  : "w-6 h-6 bg-white/55 shadow-[0_0_0_2px_rgba(0,0,0,0.35)]"
+                  ? "w-4 h-4 bg-white shadow-[0_0_0_2px_rgba(255,255,255,0.9)]"
+                  : "w-3.5 h-3.5 bg-white/55 shadow-[0_0_0_1.5px_rgba(0,0,0,0.35)]"
               )}
             />
           </button>

@@ -198,39 +198,43 @@ export default function Timer({
         {activeTab === "timer" && (
           <>
             {isFocusMode ? (
-              <FocusView
-                modes={modes}
-                timerMode={timerMode}
-                remaining={remaining}
-                running={running}
-                formatTime={formatTime}
-                onSwitchMode={switchMode}
-                onToggleStart={toggleStart}
-                onReset={reset}
-                onAddTime={addTime}
-                contentLeft={contentLeft}
-              />
+              <div className="absolute inset-0 -translate-y-[25px]">
+                <FocusView
+                  modes={modes}
+                  timerMode={timerMode}
+                  remaining={remaining}
+                  running={running}
+                  formatTime={formatTime}
+                  onSwitchMode={switchMode}
+                  onToggleStart={toggleStart}
+                  onReset={reset}
+                  onAddTime={addTime}
+                  contentLeft={contentLeft}
+                />
+              </div>
             ) : (
-              <BreakView
-                modes={modes}
-                timerMode={timerMode}
-                remaining={remaining}
-                running={running}
-                formatTime={formatTime}
-                onSwitchMode={switchMode}
-                onToggleStart={toggleStart}
-                onReset={reset}
-                contentLeft={contentLeft}
-                activity={currentActivity}
-                onActivityChange={() =>
-                  setActivityIdx(
-                    Math.floor(Math.random() * exercises.length)
-                  )
-                }
-                onActivitySelect={() => setActiveTab("workout")}
-                descriptionOpen={descriptionOpen}
-                onToggleDescription={() => setDescriptionOpen(!descriptionOpen)}
-              />
+              <div className="absolute inset-0 -translate-y-[60px]">
+                <BreakView
+                  modes={modes}
+                  timerMode={timerMode}
+                  remaining={remaining}
+                  running={running}
+                  formatTime={formatTime}
+                  onSwitchMode={switchMode}
+                  onToggleStart={toggleStart}
+                  onReset={reset}
+                  contentLeft={contentLeft}
+                  activity={currentActivity}
+                  onActivityChange={() =>
+                    setActivityIdx(
+                      Math.floor(Math.random() * exercises.length)
+                    )
+                  }
+                  onActivitySelect={() => setActiveTab("workout")}
+                  descriptionOpen={descriptionOpen}
+                  onToggleDescription={() => setDescriptionOpen(!descriptionOpen)}
+                />
+              </div>
             )}
           </>
         )}

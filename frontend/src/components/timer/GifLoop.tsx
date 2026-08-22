@@ -60,6 +60,19 @@ export default function GifLoop({ gifUrl, className }: Props) {
         },
         events: {
           onReady: (event) => {
+            // YT.Player replaces the mount div with a real <iframe>, so any
+            // style set on the div beforehand is discarded — the crop that
+            // hides the title bar/logo/end-card only takes effect if applied
+            // directly to the actual iframe once it exists.
+            Object.assign(event.target.getIframe().style, {
+              position: "absolute",
+              top: "-15%",
+              left: "-10%",
+              width: "120%",
+              height: "130%",
+              border: "0",
+              pointerEvents: "none",
+            });
             event.target.setPlaybackQuality("hd1080");
             event.target.playVideo();
             // Belt-and-braces: onStateChange's ENDED fires the restart
@@ -109,17 +122,7 @@ export default function GifLoop({ gifUrl, className }: Props) {
       className={className}
       style={{ position: "relative", overflow: "hidden", background: "#000" }}
     >
-      <div
-        ref={mountRef}
-        style={{
-          position: "absolute",
-          top: "-15%",
-          left: "-10%",
-          width: "120%",
-          height: "130%",
-          pointerEvents: "none",
-        }}
-      />
+      <div ref={mountRef} />
     </div>
   );
 }

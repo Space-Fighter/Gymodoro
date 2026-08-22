@@ -34,7 +34,7 @@ export default function FocusView({
 }: Props) {
   return (
     <div
-      className="absolute inset-0 flex flex-col items-center justify-center z-10 gap-4 py-20"
+      className="absolute inset-0 flex flex-col items-center justify-center z-10 gap-4 pt-36 pb-20"
       style={{ left: contentLeft, transition: "left 0.25s ease" }}
     >
       {/* Mode Dots */}
