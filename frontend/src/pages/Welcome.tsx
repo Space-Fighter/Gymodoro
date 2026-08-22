@@ -12,6 +12,7 @@ import Audience from "@/components/welcome/Audience";
 import FinalCTA from "@/components/welcome/FinalCTA";
 import Footer from "@/components/welcome/Footer";
 import { WELCOME_BACKGROUND_URL, WELCOME_BACKGROUND_ALT } from "@/components/welcome/backgrounds";
+import logo from "@/assets/gymodoro-logo.png";
 
 export default function Welcome() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -39,6 +40,20 @@ export default function Welcome() {
         className="fixed inset-0 -z-10 h-full w-full object-cover"
       />
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-background/10 via-background/25 to-background/60" />
+
+      {/* Brand — sits above the Hero section in normal page flow, so it
+          scrolls away with the page instead of staying pinned like the
+          fixed navbar. */}
+      <a
+        href="#top"
+        className="absolute -top-[71px] left-[calc(50vw-532px)] z-30 flex flex-col items-center gap-0 text-foreground"
+        aria-label="Gymodoro Home"
+      >
+        <img src={logo} alt="Gymodoro" className="w-[270px] h-[270px] object-contain" />
+        <span className="font-extrabold tracking-wide text-xl font-poppins -mt-[68px]">
+          GYMODORO
+        </span>
+      </a>
 
       <Navbar />
       <main className="flex-1">

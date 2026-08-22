@@ -1,9 +1,35 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+// The logo (270px) and nav's max width (768px, from max-w-3xl) are fixed
+// constants, so the "centered as a pair" position is a deterministic CSS
+// formula — no runtime measurement needed:
+//   groupWidth = logoWidth + gap + navWidth = 270 + 24 + 768 = 1062
+//   navLeft = (100vw - groupWidth) / 2 + logoWidth + gap = 50vw - 237px
+
 export default function Navbar() {
+  const [pastLogo, setPastLogo] = useState(false);
+
+  useEffect(() => {
+    const logoEl = document.querySelector<HTMLElement>('a[aria-label="Gymodoro Home"]');
+
+    function handleScroll() {
+      if (!logoEl) return;
+      setPastLogo(logoEl.getBoundingClientRect().bottom <= 0);
+    }
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <>
-      <header className="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-3xl rounded-full border border-border/40 bg-background/80 backdrop-blur-md shadow-lg transition-all duration-200">
+      <header
+        className={`fixed z-40 w-[calc(100%-2rem)] max-w-3xl rounded-full border border-border/40 bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300 ${
+          pastLogo ? "top-4 left-1/2 -translate-x-1/2" : "top-[51px] left-[calc(50vw-297px)]"
+        }`}
+      >
         <div className="px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Navigation Links */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
