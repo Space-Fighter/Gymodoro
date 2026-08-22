@@ -144,9 +144,9 @@ export default function Timer({
       <div className="absolute inset-0 bg-black/20" />
 
       {/* Logo */}
-      <div className="absolute top-0 left-0 z-30 flex items-center gap-1 pointer-events-none">
+      <div className="absolute -top-6 left-0 z-30 flex items-center gap-0 pointer-events-none">
         <img src={logo} alt="Gymodoro" className="w-[135px] h-[135px] object-contain" />
-        <span className="text-white font-extrabold tracking-wide text-2xl font-poppins">
+        <span className="text-white font-extrabold tracking-wide text-2xl font-poppins -ml-2">
           GYMODORO
         </span>
       </div>
