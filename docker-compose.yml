@@ -13,7 +13,7 @@ services:
       context: .
       dockerfile: deploy/nginx/Dockerfile
       args:
-        VITE_API_URL: ""
+        VITE_API_URL: "https://gymodoro.com"
     ports:
       - "80:80"
       - "443:443"
