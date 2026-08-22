@@ -45,12 +45,16 @@ export default function Timer({
       return DEFAULT_BACKGROUND_ID;
     }
   });
-  const timerInterval = useRef<NodeJS.Timeout>();
+  const timerInterval = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
-  const { exercises, loading, error } = useExercises();
+  const { exercises, loading } = useExercises();
 
+  // Randomize the initial activity once exercises finish loading. This has
+  // to live in an effect rather than during render: Math.random() is impure,
+  // and render must stay pure/idempotent.
   useEffect(() => {
     if (exercises.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActivityIdx(Math.floor(Math.random() * exercises.length));
     }
   }, [exercises.length]);
@@ -72,7 +76,6 @@ export default function Timer({
   const currentMode = modes.find((m) => m.id === timerMode)!;
   const currentActivity = exercises[activityIdx] || null;
   const isFocusMode = timerMode === "focus";
-  const isBreakMode = timerMode !== "focus";
 
   useEffect(() => {
     if (!running) return;
@@ -171,7 +174,7 @@ export default function Timer({
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => setActiveTab(tab as TabType)}
       />
 
       {/* Collapsed Toggle Button */}

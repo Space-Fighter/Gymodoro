@@ -28,7 +28,7 @@ function serializeExercise(exercise: any) {
 
 // Builds a Prisma `where` clause shared by list + random, from
 // ?muscleGroup=&equipment=&type=&difficulty= query params.
-function buildWhere(query: Request['query']) {
+function buildWhere(query: Partial<Record<'muscleGroup' | 'equipment' | 'type' | 'difficulty' | 'bodyArea', unknown>>) {
   const { muscleGroup, equipment, type, difficulty, bodyArea } = query;
   const where: any = {};
 
@@ -69,7 +69,7 @@ export async function listExercises(req: Request, res: Response) {
 
 export async function getExerciseById(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const exercise = await prisma.exercise.findUnique({ where: { id }, include: EXERCISE_INCLUDE });
 
     if (!exercise) {
@@ -83,7 +83,30 @@ export async function getExerciseById(req: Request, res: Response) {
   }
 }
 
-export async function getRandomExercise(req: Request, res: Response) {
+// Shared by the HTTP handler below and by other controllers (e.g. sessions'
+// startBreak) that need to assign a random exercise without an internal
+// HTTP round-trip. Catalog is small (~15-20 rows), so picking a random id
+// in JS and re-fetching it is simpler than a raw ORDER BY RANDOM() query.
+async function selectRandomExercise(where: any) {
+  const matchingIds = await prisma.exercise.findMany({ where, select: { id: true } });
+  if (matchingIds.length === 0) {
+    return null;
+  }
+
+  const randomId = matchingIds[Math.floor(Math.random() * matchingIds.length)].id;
+  return prisma.exercise.findUnique({ where: { id: randomId }, include: EXERCISE_INCLUDE });
+}
+
+/**
+ * Plain, reusable helper (no req/res) for picking a random exercise,
+ * optionally filtered by exercise-type category (e.g. "cardio", "strength").
+ */
+export async function getRandomExercise(category?: string) {
+  const where = category ? buildWhere({ type: category }) : {};
+  return selectRandomExercise(where);
+}
+
+export async function getRandomExerciseHandler(req: Request, res: Response) {
   try {
     const { difficulty } = req.query;
     if (typeof difficulty === 'string' && !VALID_DIFFICULTIES.includes(difficulty.toLowerCase())) {
@@ -91,19 +114,12 @@ export async function getRandomExercise(req: Request, res: Response) {
     }
 
     const where = buildWhere(req.query);
-
-    // Catalog is small (~15-20 rows), so picking a random id in JS and
-    // re-fetching it is simpler than a raw ORDER BY RANDOM() query and
-    // reuses buildWhere instead of duplicating the filter logic in SQL.
-    const matchingIds = await prisma.exercise.findMany({ where, select: { id: true } });
-    if (matchingIds.length === 0) {
+    const exercise = await selectRandomExercise(where);
+    if (!exercise) {
       return res.status(404).json({ message: 'No exercises match the given filters.' });
     }
 
-    const randomId = matchingIds[Math.floor(Math.random() * matchingIds.length)].id;
-    const exercise = await prisma.exercise.findUnique({ where: { id: randomId }, include: EXERCISE_INCLUDE });
-
-    res.status(200).json({ exercise: serializeExercise(exercise!) });
+    res.status(200).json({ exercise: serializeExercise(exercise) });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch a random exercise.' });

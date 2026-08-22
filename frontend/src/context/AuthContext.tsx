@@ -1,13 +1,12 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useRef,
   useState,
 } from "react";
 import type { ReactNode } from "react";
 import type { User } from "@/types/auth";
+import { AuthContext } from "@/context/auth-context-value";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -15,22 +14,6 @@ interface RegisterResult {
   message: string;
   emailSent: boolean;
 }
-
-interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<RegisterResult>;
-  resendVerification: (email: string) => Promise<{ message: string }>;
-  googleLogin: (idToken: string) => Promise<void>;
-  logout: () => Promise<void>;
-  deleteAccount: () => Promise<void>;
-  checkAuth: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -232,6 +215,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Legitimate external-system sync (network auth check on mount), not a
+    // derived-state computation, so this can't be rewritten as a render-phase
+    // state adjustment the way a pure calculation could be.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -255,12 +242,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 }

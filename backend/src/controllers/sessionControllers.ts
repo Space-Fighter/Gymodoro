@@ -140,8 +140,6 @@ export async function startBreak(req: Request, res: Response) {
         ...updatedSession,
         workMinutes: Math.round(updatedSession.workDuration / 60),
         breakMinutes: Math.round(updatedSession.breakDuration / 60),
-        exerciseMinutes: updatedSession.Exercise ? Math.round(updatedSession.Exercise.duration / 60) : 0,
-        estimatedCaloriesBurned: updatedSession.Exercise ? updatedSession.Exercise.caloriesBurned : 0,
       },
       exercise: updatedSession.Exercise,
     });
@@ -218,11 +216,6 @@ export async function updateSession(req: Request, res: Response) {
         ...updatedSession,
         workMinutes: Math.round(updatedSession.workDuration / 60),
         breakMinutes: Math.round(updatedSession.breakDuration / 60),
-        exerciseMinutes: updatedSession.Exercise ? Math.round(updatedSession.Exercise.duration / 60) : 0,
-        estimatedCaloriesBurned:
-          updatedSession.Exercise && updatedSession.status === 'completed'
-            ? updatedSession.Exercise.caloriesBurned
-            : 0,
       },
     });
   } catch (error) {
@@ -283,12 +276,6 @@ export async function getSessions(req: Request, res: Response) {
     ]);
 
     const formattedSessions = sessions.map((s) => {
-      const exerciseMinutes = s.Exercise ? Math.round(s.Exercise.duration / 60) : 0;
-      const caloriesBurned =
-        s.Exercise && (s.status === 'completed' || s.status === 'break')
-          ? s.Exercise.caloriesBurned
-          : 0;
-
       return {
         id: s.id,
         userId: s.userId,
@@ -301,20 +288,13 @@ export async function getSessions(req: Request, res: Response) {
         breakDuration: s.breakDuration,
         workMinutes: Math.round(s.workDuration / 60),
         breakMinutes: Math.round(s.breakDuration / 60),
-        exerciseMinutes,
-        caloriesBurned,
         exercise: s.Exercise
           ? {
               id: s.Exercise.id,
               name: s.Exercise.name,
               description: s.Exercise.description,
-              category: s.Exercise.category,
-              difficulty: s.Exercise.difficulty,
-              duration: s.Exercise.duration,
-              durationMinutes: exerciseMinutes,
-              caloriesBurned: s.Exercise.caloriesBurned,
-              imageUrl: s.Exercise.imageUrl,
-              instructions: s.Exercise.instructions,
+              videoUrl: s.Exercise.videoUrl,
+              gifUrl: s.Exercise.gifUrl,
             }
           : null,
       };
@@ -361,19 +341,11 @@ export async function getSessionById(req: Request, res: Response) {
       return res.status(403).json({ message: 'You do not have permission to view this session.' });
     }
 
-    const exerciseMinutes = session.Exercise ? Math.round(session.Exercise.duration / 60) : 0;
-    const caloriesBurned =
-      session.Exercise && (session.status === 'completed' || session.status === 'break')
-        ? session.Exercise.caloriesBurned
-        : 0;
-
     return res.status(200).json({
       session: {
         ...session,
         workMinutes: Math.round(session.workDuration / 60),
         breakMinutes: Math.round(session.breakDuration / 60),
-        exerciseMinutes,
-        caloriesBurned,
       },
     });
   } catch (error) {
@@ -441,8 +413,6 @@ export async function getSessionStats(req: Request, res: Response) {
     // 1. Overall Aggregates
     let totalFocusSeconds = 0;
     let totalBreakSeconds = 0;
-    let totalExerciseSeconds = 0;
-    let totalCaloriesBurned = 0;
 
     let completedCount = 0;
     let skippedCount = 0;
@@ -459,8 +429,6 @@ export async function getSessionStats(req: Request, res: Response) {
     let todayPomodoros = 0;
     let todayFocusSeconds = 0;
     let todayBreakSeconds = 0;
-    let todayExerciseSeconds = 0;
-    let todayCaloriesBurned = 0;
 
     // 3. Hourly Distribution (0..23)
     const hourlyCounts = Array.from({ length: 24 }, (_, h) => ({
@@ -479,26 +447,23 @@ export async function getSessionStats(req: Request, res: Response) {
       completedPomodoros: number;
       focusMinutes: number;
       breakMinutes: number;
-      exerciseMinutes: number;
-      caloriesBurned: number;
       sessionsCount: number;
     }>();
 
     // 5. Day of Week Breakdown (Mon..Sun)
     const dayNamesShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const dayNamesFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayOfWeekStats: Record<string, { count: number; completedCount: number; focusMinutes: number; caloriesBurned: number }> = {
-      Mon: { count: 0, completedCount: 0, focusMinutes: 0, caloriesBurned: 0 },
-      Tue: { count: 0, completedCount: 0, focusMinutes: 0, caloriesBurned: 0 },
-      Wed: { count: 0, completedCount: 0, focusMinutes: 0, caloriesBurned: 0 },
-      Thu: { count: 0, completedCount: 0, focusMinutes: 0, caloriesBurned: 0 },
-      Fri: { count: 0, completedCount: 0, focusMinutes: 0, caloriesBurned: 0 },
-      Sat: { count: 0, completedCount: 0, focusMinutes: 0, caloriesBurned: 0 },
-      Sun: { count: 0, completedCount: 0, focusMinutes: 0, caloriesBurned: 0 },
+    const dayOfWeekStats: Record<string, { count: number; completedCount: number; focusMinutes: number }> = {
+      Mon: { count: 0, completedCount: 0, focusMinutes: 0 },
+      Tue: { count: 0, completedCount: 0, focusMinutes: 0 },
+      Wed: { count: 0, completedCount: 0, focusMinutes: 0 },
+      Thu: { count: 0, completedCount: 0, focusMinutes: 0 },
+      Fri: { count: 0, completedCount: 0, focusMinutes: 0 },
+      Sat: { count: 0, completedCount: 0, focusMinutes: 0 },
+      Sun: { count: 0, completedCount: 0, focusMinutes: 0 },
     };
 
-    // 6. Exercise Category Breakdown
-    const exerciseCategoryStats: Record<string, { count: number; exerciseMinutes: number; caloriesBurned: number }> = {};
+    // 6. Exercise Engagement
     let totalSessionsWithExercise = 0;
 
     for (const session of sessions) {
@@ -522,23 +487,8 @@ export async function getSessionStats(req: Request, res: Response) {
         totalBreakSeconds += session.breakDuration;
       }
 
-      // Exercise calories and duration from completed exercises
-      let sessionCalories = 0;
-      let sessionExerciseSec = 0;
       if (session.Exercise && isBreakOrCompleted) {
-        sessionCalories = session.Exercise.caloriesBurned;
-        sessionExerciseSec = session.Exercise.duration;
         totalSessionsWithExercise++;
-        totalCaloriesBurned += sessionCalories;
-        totalExerciseSeconds += sessionExerciseSec;
-
-        const cat = session.Exercise.category || 'other';
-        if (!exerciseCategoryStats[cat]) {
-          exerciseCategoryStats[cat] = { count: 0, exerciseMinutes: 0, caloriesBurned: 0 };
-        }
-        exerciseCategoryStats[cat].count++;
-        exerciseCategoryStats[cat].exerciseMinutes += Math.round(sessionExerciseSec / 60);
-        exerciseCategoryStats[cat].caloriesBurned += sessionCalories;
       }
 
       // Today's stats
@@ -549,10 +499,6 @@ export async function getSessionStats(req: Request, res: Response) {
           todayBreakSeconds += session.breakDuration;
         } else if (session.status === 'break') {
           todayFocusSeconds += session.workDuration;
-        }
-        if (session.Exercise && isBreakOrCompleted) {
-          todayExerciseSeconds += session.Exercise.duration;
-          todayCaloriesBurned += session.Exercise.caloriesBurned;
         }
       }
 
@@ -573,7 +519,6 @@ export async function getSessionStats(req: Request, res: Response) {
           dayOfWeekStats[shortDay].completedCount++;
           dayOfWeekStats[shortDay].focusMinutes += Math.round(session.workDuration / 60);
         }
-        dayOfWeekStats[shortDay].caloriesBurned += sessionCalories;
       }
 
       // By Day (YYYY-MM-DD)
@@ -582,15 +527,12 @@ export async function getSessionStats(req: Request, res: Response) {
       const dayFull = dayNamesFull[dayIndex];
       const workMin = isCompleted ? Math.round(session.workDuration / 60) : 0;
       const breakMin = isBreakOrCompleted ? Math.round(session.breakDuration / 60) : 0;
-      const exMin = Math.round(sessionExerciseSec / 60);
 
       if (existingDaily) {
         existingDaily.sessionsCount++;
         if (isCompleted) existingDaily.completedPomodoros++;
         existingDaily.focusMinutes += workMin;
         existingDaily.breakMinutes += breakMin;
-        existingDaily.exerciseMinutes += exMin;
-        existingDaily.caloriesBurned += sessionCalories;
       } else {
         dailyMap.set(dateKey, {
           date: dateKey,
@@ -599,8 +541,6 @@ export async function getSessionStats(req: Request, res: Response) {
           completedPomodoros: isCompleted ? 1 : 0,
           focusMinutes: workMin,
           breakMinutes: breakMin,
-          exerciseMinutes: exMin,
-          caloriesBurned: sessionCalories,
           sessionsCount: 1,
         });
       }
@@ -608,13 +548,11 @@ export async function getSessionStats(req: Request, res: Response) {
 
     const totalFocusMinutes = Math.round(totalFocusSeconds / 60);
     const totalBreakMinutes = Math.round(totalBreakSeconds / 60);
-    const totalExerciseMinutes = Math.round(totalExerciseSeconds / 60);
     const totalSessions = sessions.length;
     const completionRate = totalSessions > 0 ? Number(((completedCount / totalSessions) * 100).toFixed(1)) : 0;
 
     const todayFocusMinutes = Math.round(todayFocusSeconds / 60);
     const todayBreakMinutes = Math.round(todayBreakSeconds / 60);
-    const todayExerciseMinutes = Math.round(todayExerciseSeconds / 60);
 
     // Heatmap array format: [{ date: '2026-08-19', count: 6, intensity: 3 }]
     const byDay = Array.from(dailyMap.values());
@@ -639,8 +577,6 @@ export async function getSessionStats(req: Request, res: Response) {
         totalPomodoros: completedCount,
         totalFocusMinutes,
         totalBreakMinutes,
-        totalExerciseMinutes,
-        totalCaloriesBurned,
         completedSessions: completedCount,
         skippedSessions: skippedCount,
         abandonedSessions: abandonedCount,
@@ -653,8 +589,6 @@ export async function getSessionStats(req: Request, res: Response) {
         pomodoros: todayPomodoros,
         focusMinutes: todayFocusMinutes,
         breakMinutes: todayBreakMinutes,
-        exerciseMinutes: todayExerciseMinutes,
-        caloriesBurned: todayCaloriesBurned,
         formattedFocusTime: formatMinutes(todayFocusMinutes),
       },
       byHour: hourlyCounts,
@@ -663,9 +597,6 @@ export async function getSessionStats(req: Request, res: Response) {
       heatmap,
       exerciseActivity: {
         totalSessionsWithExercise,
-        totalExerciseMinutes,
-        totalCaloriesBurned,
-        categoryBreakdown: exerciseCategoryStats,
       },
     });
   } catch (error) {

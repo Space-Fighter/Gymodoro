@@ -24,7 +24,10 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undef
 export function useGoogleSignIn(onCredential: (idToken: string) => void) {
   const initialized = useRef(false);
   const onCredentialRef = useRef(onCredential);
-  onCredentialRef.current = onCredential;
+
+  useEffect(() => {
+    onCredentialRef.current = onCredential;
+  }, [onCredential]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || initialized.current) return;

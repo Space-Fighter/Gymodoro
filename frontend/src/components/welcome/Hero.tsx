@@ -1,9 +1,27 @@
+import logo from "@/assets/gymodoro-logo.png";
+
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden pt-12 pb-20 md:py-24 lg:py-32">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden min-h-screen flex items-center pt-24 pb-20 md:pt-12">
+      {/* Brand — same position/size it had before, now living in Hero instead of Navbar */}
+      <a
+        href="#top"
+        className="absolute top-10 sm:top-16 lg:top-20 -left-20 z-50 flex flex-col items-center font-extrabold text-xl tracking-tight transition-transform duration-200 hover:-translate-y-0.5 text-foreground"
+        aria-label="Gymodoro Home"
+      >
+        <img
+          src={logo}
+          alt="Gymodoro Logo"
+          className="w-[507px] h-[507px] object-contain"
+        />
+        <span className="font-heading font-extrabold text-[36px] tracking-tight -mt-32">
+          Gymodoro
+        </span>
+      </a>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-          
+
           {/* Left Column: Copy & Actions */}
           <div className="flex flex-col items-start z-10">
             

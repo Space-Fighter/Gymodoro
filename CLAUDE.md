@@ -26,13 +26,13 @@ Backend (`cd backend`):
 - `npx prisma generate` — regenerate the client (see gotcha below)
 - `npm run db:seed` — seed the `Exercise` catalog from `prisma/exercise-seed-data.json` (idempotent, safe to re-run)
 - `npm run db:import-wger` — import fresh exercise data from the wger open exercise database (writes to `exercise-seed-data.json`, then re-run `db:seed`)
+- `npm run db:import-darebee` — same idea, scraping Darebee.com instead (see Exercise catalog architecture below for how the two sources coexist)
+- `npm run db:fill-missing-videos` — fallback maintenance pass that fills `videoUrl: null` gaps either importer left behind, via an unrestricted YouTube search
 - `npx tsx script.ts` — run the standalone Prisma scratch script (creates a sample user; not part of the server)
 
 There is **no test runner configured** in either project. `AUTH_TESTING_GUIDE.md` documents manual Postman testing for the auth endpoints.
 
-CI (`.github/workflows/backend-ci.yml`, `frontend-ci.yml`) runs on push/PR to `main`, path-filtered to each app's own directory. Backend CI runs `prisma generate` then `npm run build`; frontend CI runs `npm run lint` then `npm run build`. Neither runs tests (none exist) or deploys.
-
-**`backend/src/controllers/sessionControllers.ts` currently fails `tsc`/`npm run build`.** It reads `Exercise.duration`, `.caloriesBurned`, `.category`, `.imageUrl`, and `.instructions` (and calls `getRandomExercise` with one argument), none of which match the current `Exercise` model in `prisma/schema.prisma` (which has `mechanic`, `force`, `videoUrl`, `gifUrl`, `muscleDiagramUrl`, and a `difficulty` relation instead). The Session model/routes/middleware (`sessionRoutes.ts`, `middleware/authenticate.ts`) are otherwise wired up and mounted at `/api/sessions`, but the controller needs reconciling with the schema (or the schema extending) before this compiles. Check current state with `npx tsc --noEmit` before assuming this API works.
+CI (`.github/workflows/backend-ci.yml`, `frontend-ci.yml`) runs on push/PR to `main`, path-filtered to each app's own directory. Backend CI runs `prisma generate` then `npm run build`; frontend CI runs `npm run lint` then `npm run build`. Neither runs tests (none exist) or deploys. A separate `.github/workflows/neon-branch.yml` creates a temporary Neon DB branch (`preview/pr-<number>-<branch>`, 14-day expiry) on PR open/sync and deletes it on close — it does not currently run migrations or seed against that branch (that block is commented out in the workflow), so it's provisioning-only for now.
 
 ## Backend environment & first-run gotchas
 
@@ -62,17 +62,20 @@ Key design decisions that span multiple functions:
 
 Read-only exercise API mounted at `/api/exercises`. Data model: `Exercise` with lookup tables for `Difficulty`, `BodyArea`, `MuscleGroup`, `Equipment`, and `ExerciseType` (N-to-N via join tables). Source of truth is `prisma/exercise-seed-data.json` (static snapshot, not network-fetched).
 
-Endpoints (all GET, all in `src/controllers/exerciseControllers.ts`):
+Endpoints, all GET, all in `src/controllers/exerciseControllers.ts`:
 - `GET /api/exercises` — list all exercises, filterable by `?difficulty=`, `?bodyArea=`, `?muscleGroup=`, `?equipment=`, `?type=`. Returns `{ exercises: [], count }`.
 - `GET /api/exercises/:id` — fetch a single exercise by ID.
-- `GET /api/exercises/random` — fetch a random exercise, accepts same filter params as list.
+- `GET /api/exercises/random` — fetch a random exercise (handler: `getRandomExerciseHandler`), accepts same filter params as list.
+
+There is also a plain, non-HTTP `getRandomExercise(category?: string)` export in the same file (filters by exercise-type name, returns a raw `Exercise | null`) — that's the one `sessionControllers.ts`'s `startBreak` calls directly to assign a break exercise, sharing the pick-a-random-id logic with the HTTP handler via an internal `selectRandomExercise(where)` helper instead of an internal fetch/HTTP round-trip.
 
 All endpoints flatten join-table rows into plain string arrays (`exercise.muscleGroups` is `["Chest", "Triceps"]`, not join objects).
 
-**Seeding pipeline:**
-- `import-wger.ts` fetches exercise data from the free wger API (difficulty, mechanic, force, video/GIF URLs), maps to `SeedExercise` shape, writes to `exercise-seed-data.json`. Run on demand: `npm run db:import-wger` (one-time, not CI).
-- `exercise-seed-data.json` is the static snapshot (checked in). Never edit by hand; it's overwritten by `import-wger`.
-- `seed.ts` reads the JSON and upserts `Exercise` rows + lookup tables (Difficulty, BodyArea, MuscleGroup, Equipment, ExerciseType). Idempotent; safe to re-run. Run with `npm run db:seed` after migrations or to refresh from latest JSON.
+**Seeding pipeline — two independent scraper sources feed one snapshot:**
+- `import-wger.ts` and `import-darebee.ts` each scrape their own site (the wger open exercise database, and Darebee.com respectively) and both produce the same `SeedExercise[]` shape (defined in `types.ts`), writing/overwriting `exercise-seed-data.json`. Darebee is the current primary source; wger's importer is kept for reference/fallback. `import-wger.ts` filters to the `WANTED_EXERCISES` allowlist in `curated.ts`.
+- Both importers share a "trusted channel" YouTube video lookup (`youtube.ts`, via a standalone `yt-dlp` binary, no API key/quota) to fill `videoUrl` with an instructional video, independent of which catalog the exercise itself came from. `db:fill-missing-videos` is a fallback pass over `missing-video-exercises.json` (the list either importer leaves behind) using an unrestricted version of the same search.
+- `exercise-seed-data.json` is the static, checked-in snapshot. Never edit by hand — it's overwritten by whichever importer you run.
+- `seed.ts` reads the JSON (agnostic of which importer wrote it) and upserts `Exercise` rows + lookup tables (Difficulty, BodyArea, MuscleGroup, Equipment, ExerciseType). Idempotent; safe to re-run. Run with `npm run db:seed` after migrations or to refresh from latest JSON.
 - MVP scope: read-only catalog only, no user-created workouts/routines yet.
 
 ## Session API (backend)
@@ -80,12 +83,12 @@ All endpoints flatten join-table rows into plain string arrays (`exercise.muscle
 `Session` model tracks a single Pomodoro run (`prisma/schema.prisma`): `workDuration`/`breakDuration` in seconds, `status` (`in_progress` | `break` | `completed` | `skipped` | `abandoned`), timestamps, and an optional linked `Exercise`. Routes in `src/routes/sessionRoutes.ts`, mounted at `/api/sessions`, all behind `middleware/authenticate.ts` (Bearer token → `req.userId`).
 
 - `POST /` — start a session (`createSession`). Body optionally overrides `workDuration`/`breakDuration`; values `<= 120` are treated as minutes and converted to seconds, larger values are treated as already-seconds.
-- `PATCH /:id/start-break` — call when the work period ends; assigns a random exercise via `getRandomExercise()` (shared, direct function call into `exerciseControllers.ts`, not an internal HTTP round-trip) and flips status to `break`.
+- `PATCH /:id/start-break` — call when the work period ends; assigns a random exercise via `getRandomExercise()` (the plain helper exported from `exerciseControllers.ts`, see Exercise catalog architecture above) and flips status to `break`. An optional `category` (body or query) is passed through and filters by exercise-type name.
 - `PATCH /:id` — update status/durations/exercise. All non-owner or missing-session lookups return 403/404, not silently no-op.
 - `GET /`, `GET /:id` — session history (paginated, filterable by `status`/date range) and single-session detail, always scoped to `req.userId`.
-- `GET /stats` — heavy aggregation endpoint (today/by-hour/by-day/by-day-of-week/heatmap/exercise-category breakdown) for a dashboard that doesn't exist in the frontend yet. Registered before `/:id` in the router specifically so `"stats"` isn't parsed as an id.
+- `GET /stats` — aggregation endpoint (today/by-hour/by-day/by-day-of-week/heatmap/completion-rate) for a dashboard that doesn't exist in the frontend yet. Registered before `/:id` in the router specifically so `"stats"` isn't parsed as an id.
 
-See the note under Commands above — this controller does not currently type-check against the `Exercise` model.
+**`Exercise` has no `duration`, `caloriesBurned`, `category`, `imageUrl`, or `instructions` fields** (see the model above) — none of the session endpoints compute or return exercise-minutes/calories/category breakdowns. Where a session response includes exercise data, it's limited to the fields that actually exist (`id`, `name`, `description`, `videoUrl`, `gifUrl`). If workout-calorie or category-breakdown stats become a real requirement, that means extending the `Exercise` model via a migration, not inferring them client-side.
 
 ## Frontend architecture
 
