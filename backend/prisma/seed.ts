@@ -11,6 +11,47 @@ import { join } from 'node:path';
 import { prisma } from '../lib/prisma.js';
 import type { SeedExercise } from './types.js';
 
+// MET (Metabolic Equivalent of Task) values from the Compendium of Physical
+// Activities (Ainsworth et al.), the standard reference fitness apps use to
+// estimate calorie burn, matched to this catalog's exerciseTypes tags.
+const MET_BY_EXERCISE_TYPE: Record<string, number> = {
+  stretching: 2.5, // hatha yoga / stretching, light effort
+  yoga: 3.0, // yoga, general
+  strength: 5.0, // resistance training, moderate-vigorous effort
+  cardio: 7.0, // aerobic exercise, general
+  metcon: 8.0, // circuit training, vigorous effort, minimal rest
+  combat: 9.0, // martial arts / boxing, vigorous effort
+};
+
+// Difficulty tag scales intensity within a MET category (e.g. "advanced"
+// strength work burns more per minute than "light" strength work).
+const DIFFICULTY_INTENSITY_MULTIPLIER: Record<string, number> = {
+  light: 0.85,
+  easy: 0.85,
+  normal: 1.0,
+  hard: 1.15,
+  advanced: 1.3,
+};
+
+// The app doesn't track per-user body weight yet, so estimates use this as a
+// reference adult body weight — the standard fallback used by MET-based
+// calorie calculators when actual weight is unavailable.
+const REFERENCE_BODY_WEIGHT_KG = 70;
+
+function estimateCaloriesPerMinute(exercise: SeedExercise): number {
+  if (exercise.caloriesPerMinute) return exercise.caloriesPerMinute;
+
+  const types = exercise.exerciseTypes.length ? exercise.exerciseTypes : ['strength'];
+  const avgMet =
+    types.reduce((sum, t) => sum + (MET_BY_EXERCISE_TYPE[t] ?? MET_BY_EXERCISE_TYPE.strength), 0) /
+    types.length;
+  const multiplier = DIFFICULTY_INTENSITY_MULTIPLIER[exercise.difficulty.toLowerCase()] ?? 1.0;
+
+  // Standard MET-to-calorie formula: kcal/min = MET * 3.5 * bodyWeightKg / 200
+  const kcalPerMinute = (avgMet * multiplier * 3.5 * REFERENCE_BODY_WEIGHT_KG) / 200;
+  return Number(kcalPerMinute.toFixed(2));
+}
+
 /** Upserts each name into a lookup table and returns a name → id map. */
 async function upsertLookup(
   model: { upsert: (args: any) => Promise<{ id: string; name: string }> },
@@ -57,6 +98,7 @@ async function main() {
       videoUrl: exercise.videoUrl,
       gifUrl: exercise.gifUrl,
       muscleDiagramUrl: exercise.muscleDiagramUrl,
+      caloriesPerMinute: estimateCaloriesPerMinute(exercise),
       difficultyId: difficultyIds.get(exercise.difficulty)!,
       bodyAreaId: exercise.bodyArea ? bodyAreaIds.get(exercise.bodyArea)! : null,
     };

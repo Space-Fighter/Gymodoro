@@ -54,6 +54,7 @@ model Exercise {
   videoUrl         String?
   gifUrl           String?
   muscleDiagramUrl String?
+  caloriesPerMinute Float   @default(5)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

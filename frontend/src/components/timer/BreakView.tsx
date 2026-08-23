@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { RotateCcw, Pause, Play, Dice6 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ExerciseType } from "@/types/exercise";
@@ -18,6 +19,32 @@ function descriptionToBullets(description: string): string[] {
     .split(/(?<=[.!?])\s+/)
     .map((sentence) => sentence.trim())
     .filter(Boolean);
+}
+
+function DropdownToggle({
+  label,
+  open,
+  onToggle,
+}: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      className={cn(
+        "w-full flex items-center justify-between px-4 py-3 rounded-lg",
+        "border border-white/15 bg-black/35 backdrop-blur-md",
+        "text-white text-sm font-semibold hover:bg-black/50 transition-colors"
+      )}
+    >
+      <span>{label}</span>
+      <span className={cn("transition-transform", open ? "rotate-180" : "rotate-0")}>
+        ▼
+      </span>
+    </button>
+  );
 }
 
 interface Props {
@@ -53,6 +80,9 @@ export default function BreakView({
   descriptionOpen,
   onToggleDescription,
 }: Props) {
+  const [muscleDiagramOpen, setMuscleDiagramOpen] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(true);
+
   return (
     <div
       className="absolute inset-0 flex flex-col z-10 pt-36 px-6"
@@ -104,9 +134,7 @@ export default function BreakView({
                 {activity.name}
               </div>
 
-              <TagList exercise={activity} />
-
-              <div className="w-full rounded-lg overflow-hidden aspect-video bg-black border border-white/10">
+              <div className="w-full flex-1 min-h-0 rounded-lg overflow-hidden bg-black border border-white/10">
                 {activity.gifUrl ? (
                   <GifLoop gifUrl={activity.gifUrl} className="w-full h-full" />
                 ) : (
@@ -117,12 +145,21 @@ export default function BreakView({
               </div>
 
               {activity.muscleDiagramUrl && (
-                <div className="flex justify-center rounded-lg overflow-hidden bg-black/20 border border-white/10 p-2">
-                  <img
-                    src={activity.muscleDiagramUrl}
-                    alt={`${activity.name} muscle diagram`}
-                    className="max-w-[240px] w-full h-auto object-contain"
+                <div className="mt-auto shrink-0 flex flex-col gap-2">
+                  <DropdownToggle
+                    label="Muscle Diagram"
+                    open={muscleDiagramOpen}
+                    onToggle={() => setMuscleDiagramOpen((o) => !o)}
                   />
+                  {muscleDiagramOpen && (
+                    <div className="flex justify-center rounded-lg overflow-hidden bg-black/20 border border-white/10 p-2">
+                      <img
+                        src={activity.muscleDiagramUrl}
+                        alt={`${activity.name} muscle diagram`}
+                        className="max-w-[180px] w-full h-auto object-contain"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </>
@@ -133,27 +170,41 @@ export default function BreakView({
         <div className="flex flex-col gap-4 overflow-y-auto pl-4">
           {activity && (
             <>
-              <button
-                onClick={onToggleDescription}
-                className={cn(
-                  "w-full flex items-center justify-between px-4 py-3 rounded-lg",
-                  "border border-white/15 bg-black/35 backdrop-blur-md",
-                  "text-white text-sm font-semibold hover:bg-black/50 transition-colors"
-                )}
-              >
-                <span>Exercise Description</span>
-                <span
-                  className={cn(
-                    "transition-transform",
-                    descriptionOpen ? "rotate-180" : "rotate-0"
-                  )}
-                >
-                  ▼
-                </span>
-              </button>
+              <TagList exercise={activity} />
 
+              <DropdownToggle
+                label="Exercise Video"
+                open={videoOpen}
+                onToggle={() => setVideoOpen((o) => !o)}
+              />
+              {videoOpen && (
+                <div className="rounded-lg overflow-hidden aspect-video bg-black border border-white/10">
+                  {activity.videoUrl ? (
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src={getYoutubeEmbedUrl(activity.videoUrl) || ""}
+                      title="exercise video"
+                      frameBorder="0"
+                      allow="encrypted-media; accelerometer; autoplay; clipboard-write; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white/50">
+                      No video available
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <DropdownToggle
+                label="Exercise Description"
+                open={descriptionOpen}
+                onToggle={onToggleDescription}
+              />
               {descriptionOpen && (
-                <div className="px-4 py-3 rounded-lg bg-black/30 backdrop-blur-md border border-white/10 text-white text-sm leading-relaxed">
+                <div className="px-4 py-3 rounded-lg bg-black/30 backdrop-blur-md border border-white/10 text-white text-sm leading-relaxed max-h-40 overflow-y-auto">
                   {activity.description ? (
                     <ul className="list-disc pl-5 space-y-1.5">
                       {descriptionToBullets(activity.description).map((sentence, i) => (
@@ -165,31 +216,21 @@ export default function BreakView({
                   )}
                 </div>
               )}
-
-              <div className="rounded-lg overflow-hidden aspect-video bg-black border border-white/10">
-                {activity.videoUrl ? (
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src={getYoutubeEmbedUrl(activity.videoUrl) || ""}
-                    title="exercise video"
-                    frameBorder="0"
-                    allow="encrypted-media; accelerometer; autoplay; clipboard-write; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="w-full h-full"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white/50">
-                    No video available
-                  </div>
-                )}
-              </div>
             </>
           )}
 
-          {/* Timer */}
-          <div className="flex flex-col items-center gap-4 mt-auto mb-12">
-            <div className="text-7xl font-bold text-white font-poppins drop-shadow-lg">
+          {/* Timer — shrinks when the description panel is open so it can
+              never be pushed into overlapping the content above it. */}
+          <div
+            className={cn(
+              "flex flex-col items-center gap-4 mt-auto shrink-0 transition-all",
+              descriptionOpen ? "mb-6" : "mb-12"
+            )}
+          >
+            <div
+              className="font-bold text-white font-poppins drop-shadow-lg transition-[font-size]"
+              style={{ fontSize: descriptionOpen ? "3rem" : "4.5rem" }}
+            >
               {formatTime(remaining)}
             </div>
 

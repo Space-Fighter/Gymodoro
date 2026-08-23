@@ -13,6 +13,8 @@ export interface SeedExercise {
   videoSource: 'leap-fitness' | 'howcast' | 'youtube-api-search' | 'yt-dlp-search' | null;
   gifUrl: string | null;
   muscleDiagramUrl: string | null;
+  /** Not sourced from wger/Darebee; seed.ts derives this from `difficulty` instead. */
+  caloriesPerMinute?: number;
   bodyArea: string | null;
   muscleGroups: string[];
   equipment: string[];

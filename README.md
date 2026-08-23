@@ -67,14 +67,6 @@ cd backend
 npm install
 ```
 
-**⚠️ Important:** The following dependencies are imported but not listed in `package.json`. Add them:
-
-```bash
-npm install morgan nodemailer google-auth-library
-```
-
-This adds: `morgan` (logging), `nodemailer` (email), `google-auth-library` (Google OAuth).
-
 #### 2b. Generate Prisma Client
 
 ```bash
@@ -104,7 +96,7 @@ EMAIL_USER="your-email@gmail.com"
 EMAIL_PASS="your-app-password"
 EMAIL_FROM="noreply@gymodoro.com"
 
-# Frontend URL (for verification links)
+# Frontend URL (for verification links + CORS allowlist)
 CLIENT_URL="http://localhost:5173"
 ```
 
@@ -199,10 +191,10 @@ The Gymodoro frontend is built with **Vite**, **React 19**, **TypeScript**, **Ta
    Open [http://localhost:5173](http://localhost:5173) in your web browser.
 
 ### 3. Available Application Routes
-- **`/` or `/welcome`** — Main Gymodoro landing page featuring the active-break marquee, interactive loop showcase, 3D timer mockup, voice AI simulator, and feature pillars.
-- **`/signin`** — Sign In page with email/password and Google/Apple OAuth options.
+- **`/welcome`** — Public landing page featuring the active-break marquee, interactive loop showcase, 3D timer mockup, and feature pillars. Authenticated users are redirected away from here to `/`.
+- **`/signin`** — Sign In page with email/password and Google OAuth.
 - **`/signup`** — Sign Up page to register a new account.
-- **`/home`** — Dashboard & session timer view.
+- **`/`** — The Pomodoro timer (protected — unauthenticated visitors are redirected to `/welcome`).
 
 ### 4. Available Frontend Commands
 
@@ -282,7 +274,10 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 ### Frontend (.env)
 
-Currently no required env vars. Frontend uses defaults.
+| Variable | Required | Description |
+|----------|----------|--------------|
+| `VITE_API_URL` | ❌ Optional | Backend origin for API calls (default: `http://localhost:3000`) |
+| `VITE_GOOGLE_CLIENT_ID` | ✅ Yes (for Google Sign-In) | Must match the backend's `GOOGLE_CLIENT_ID` |
 
 ---
 
@@ -427,6 +422,18 @@ npx prisma studio
 Opens interactive DB GUI at `http://localhost:5555`
 
 ---
+
+## Deployment
+
+Production deployment is Docker Compose-based, with Nginx handling routing/HTTPS and Certbot issuing Let's Encrypt certificates:
+
+- **`backend/Dockerfile`** — multi-stage build for the Express/Prisma backend.
+- **`deploy/nginx/Dockerfile`** — builds the frontend (`npm run build`, with `VITE_API_URL`/`VITE_GOOGLE_CLIENT_ID` passed as build args) and serves it via Nginx.
+- **`deploy/nginx/nginx.conf`** — routes `/api/*` to the backend container, serves the SPA elsewhere (with a fallback to `index.html` for client-side routing), and terminates HTTPS.
+- **`docker-compose.yml`** — runs `backend`, `nginx`, and a one-off `certbot` service together, sharing a Docker network and a volume for the SSL certificates.
+- **`deploy/deploy.sh`** — pulls latest code, rebuilds images, runs `prisma migrate deploy` against Neon's direct (non-pooled) endpoint, and restarts containers.
+
+To deploy: `docker compose up -d --build` on the server after `git pull`. See `deploy/deploy.sh` for the full scripted sequence, including migrations.
 
 ## API Documentation
 

@@ -1,4 +1,4 @@
-import { ChevronLeft, Clock, Dumbbell, Palette, Settings } from "lucide-react";
+import { BarChart3, ChevronLeft, Clock, Dumbbell, Palette, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -27,6 +27,7 @@ export default function Sidebar({
       label: "Workout Library",
       icon: <Dumbbell size={18} />,
     },
+    { id: "stats", label: "Activities Summary", icon: <BarChart3 size={18} /> },
     { id: "background", label: "Background", icon: <Palette size={18} /> },
     { id: "settings", label: "Settings", icon: <Settings size={18} /> },
   ];

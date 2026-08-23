@@ -11,11 +11,13 @@ import BackgroundView from "@/components/timer/BackgroundView";
 import SettingsView from "@/components/timer/SettingsView";
 import { useExercises } from "@/hooks/useExercises";
 import { getBackgroundById, DEFAULT_BACKGROUND_ID } from "@/components/timer/backgrounds";
+import StatsView from "@/components/stats/StatsView";
 import logo from "@/assets/gymodoro-logo.png";
 
 const BACKGROUND_STORAGE_KEY = "gymodoro-background";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-type TabType = "timer" | "workout" | "background" | "settings";
+type TabType = "timer" | "workout" | "background" | "stats" | "settings";
 type TimerMode = "focus" | "short" | "long";
 
 interface Props {
@@ -30,7 +32,7 @@ export default function Timer({
   longBreakMinutes = 15,
 }: Props) {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, getAccessToken } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("timer");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [timerMode, setTimerMode] = useState<TimerMode>("focus");
@@ -38,6 +40,9 @@ export default function Timer({
   const [running, setRunning] = useState(false);
   const [activityIdx, setActivityIdx] = useState(0);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  // Tracks the backend Session for the pomodoro cycle currently in flight, so
+  // the stats endpoint has real data to aggregate instead of always zeros.
+  const activeSessionRef = useRef<{ id: string; phase: "focus" | "break" } | null>(null);
   const [backgroundId, setBackgroundId] = useState(() => {
     try {
       return localStorage.getItem(BACKGROUND_STORAGE_KEY) || DEFAULT_BACKGROUND_ID;
@@ -77,17 +82,80 @@ export default function Timer({
   const currentActivity = exercises[activityIdx] || null;
   const isFocusMode = timerMode === "focus";
 
+  // Session persistence: mirrors the timer's own state into the backend so
+  // GET /api/sessions/stats has real data. Best-effort — failures here
+  // shouldn't interrupt the (purely client-side) countdown itself.
+  const authedFetch = useCallback(
+    (path: string, init?: RequestInit) => {
+      const token = getAccessToken();
+      if (!token) return null;
+      return fetch(`${API_URL}${path}`, {
+        ...init,
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          ...init?.headers,
+        },
+      });
+    },
+    [getAccessToken]
+  );
+
+  const startFocusSession = useCallback(async () => {
+    const res = authedFetch("/api/sessions", {
+      method: "POST",
+      body: JSON.stringify({
+        workDuration: focusMinutes,
+        breakDuration: timerMode === "long" ? longBreakMinutes : shortBreakMinutes,
+      }),
+    });
+    if (!res) return;
+    try {
+      const response = await res;
+      if (!response.ok) return;
+      const data = await response.json();
+      activeSessionRef.current = { id: data.session.id, phase: "focus" };
+    } catch {
+      // Best-effort: keep the countdown running even if this failed.
+    }
+  }, [authedFetch, focusMinutes, longBreakMinutes, shortBreakMinutes, timerMode]);
+
+  const beginBreakForActiveSession = useCallback(() => {
+    const active = activeSessionRef.current;
+    if (!active || active.phase !== "focus") return;
+    const res = authedFetch(`/api/sessions/${active.id}/start-break`, { method: "PATCH" });
+    if (res) res.catch(() => {});
+    activeSessionRef.current = { id: active.id, phase: "break" };
+  }, [authedFetch]);
+
+  const completeActiveSession = useCallback(() => {
+    const active = activeSessionRef.current;
+    if (!active) return;
+    const res = authedFetch(`/api/sessions/${active.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "completed" }),
+    });
+    if (res) res.catch(() => {});
+    activeSessionRef.current = null;
+  }, [authedFetch]);
+
+  const abandonActiveSession = useCallback(() => {
+    const active = activeSessionRef.current;
+    if (!active) return;
+    const res = authedFetch(`/api/sessions/${active.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "abandoned" }),
+    });
+    if (res) res.catch(() => {});
+    activeSessionRef.current = null;
+  }, [authedFetch]);
+
   useEffect(() => {
     if (!running) return;
 
     timerInterval.current = setInterval(() => {
-      setRemaining((prev) => {
-        if (prev <= 1) {
-          setRunning(false);
-          return 0;
-        }
-        return prev - 1;
-      });
+      setRemaining((prev) => (prev <= 1 ? 0 : prev - 1));
     }, 1000);
 
     return () => {
@@ -95,14 +163,45 @@ export default function Timer({
     };
   }, [running]);
 
+  // Fires the phase-completion side effect exactly once when the countdown
+  // reaches 0 — kept out of the setRemaining updater above, since StrictMode
+  // double-invokes updater functions in dev to catch impure ones like that.
+  useEffect(() => {
+    if (!running || remaining > 0) return;
+    // Stopping because the countdown reached zero, not a derived render
+    // computation — legitimate external (timer) sync.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRunning(false);
+    if (isFocusMode) {
+      beginBreakForActiveSession();
+    } else {
+      completeActiveSession();
+    }
+  }, [remaining, running, isFocusMode, beginBreakForActiveSession, completeActiveSession]);
+
   const toggleStart = useCallback(() => {
-    setRunning((prev) => !prev);
-  }, []);
+    const next = !running;
+    if (
+      next &&
+      isFocusMode &&
+      remaining === currentMode.duration * 60 &&
+      !activeSessionRef.current
+    ) {
+      startFocusSession();
+    }
+    setRunning(next);
+  }, [running, isFocusMode, remaining, currentMode.duration, startFocusSession]);
 
   const switchMode = (id: TimerMode) => {
     if (timerInterval.current) clearInterval(timerInterval.current);
     const mode = modes.find((m) => m.id === id);
     if (mode) {
+      const activePhase = activeSessionRef.current?.phase;
+      if (isFocusMode && id !== "focus" && activePhase === "focus") {
+        beginBreakForActiveSession();
+      } else if (!isFocusMode && id === "focus" && activePhase === "break") {
+        completeActiveSession();
+      }
       setTimerMode(id);
       setRemaining(mode.duration * 60);
       setRunning(false);
@@ -111,6 +210,7 @@ export default function Timer({
 
   const reset = () => {
     if (timerInterval.current) clearInterval(timerInterval.current);
+    if (activeSessionRef.current) abandonActiveSession();
     setRemaining(currentMode.duration * 60);
     setRunning(false);
   };
@@ -264,6 +364,9 @@ export default function Timer({
             onSelect={setBackgroundId}
           />
         )}
+
+        {/* Activities Summary View */}
+        {activeTab === "stats" && <StatsView contentLeft={contentLeft} />}
 
         {/* Settings View */}
         {activeTab === "settings" && (

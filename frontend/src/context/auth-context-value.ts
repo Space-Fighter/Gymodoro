@@ -18,6 +18,7 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  getAccessToken: () => string | null;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

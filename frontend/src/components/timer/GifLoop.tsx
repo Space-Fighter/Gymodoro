@@ -70,7 +70,9 @@ export default function GifLoop({ gifUrl, className }: Props) {
               if (!player) return;
               const duration = player.getDuration();
               const currentTime = player.getCurrentTime();
-              if (duration > 0 && currentTime >= duration - 0.1) {
+
+              // 0.4 seconds buffer prevents the "More Videos" UI flash 
+              if (duration > 0 && currentTime >= duration - 0.4) {
                 player.seekTo(0);
                 player.playVideo();
               }
@@ -113,10 +115,20 @@ export default function GifLoop({ gifUrl, className }: Props) {
         ref={mountRef}
         style={{
           position: "absolute",
-          top: "-15%",
-          left: "-10%",
-          width: "120%",
-          height: "130%",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+
+          // THE FIX: Exact pixel buffer instead of percentages.
+          // Adds 72px of overflow to top/bottom and 128px to left/right,
+          // perfectly hiding UI controls at ALL zoom levels and screen sizes.
+          width: "calc(100% + 256px)",
+          height: "calc(100% + 144px)",
+
+          // Prevents external CSS from overriding our calc math
+          maxWidth: "none",
+          maxHeight: "none",
+
           pointerEvents: "none",
         }}
       />

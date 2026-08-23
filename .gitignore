@@ -5,6 +5,9 @@ node_modules/
 .env
 .env.*
 
+# Personal deployment runbook (contains infra/server details)
+DEPLOYMENT.md
+
 # Logs
 *.log
 

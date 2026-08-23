@@ -465,6 +465,7 @@ export async function getSessionStats(req: Request, res: Response) {
 
     // 6. Exercise Engagement
     let totalSessionsWithExercise = 0;
+    let totalCaloriesBurned = 0;
 
     for (const session of sessions) {
       const sessionDate = new Date(session.startedAt);
@@ -489,6 +490,7 @@ export async function getSessionStats(req: Request, res: Response) {
 
       if (session.Exercise && isBreakOrCompleted) {
         totalSessionsWithExercise++;
+        totalCaloriesBurned += session.Exercise.caloriesPerMinute * (session.breakDuration / 60);
       }
 
       // Today's stats
@@ -584,6 +586,7 @@ export async function getSessionStats(req: Request, res: Response) {
         breakSessions: breakCount,
         totalSessions,
         completionRate,
+        totalCaloriesBurned: Math.round(totalCaloriesBurned),
       },
       today: {
         pomodoros: todayPomodoros,

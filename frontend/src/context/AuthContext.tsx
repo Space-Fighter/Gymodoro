@@ -23,6 +23,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // loses it on purpose, which is why checkAuth() re-derives it via the
   // httpOnly refresh cookie below.
   const accessTokenRef = useRef<string | null>(null);
+  const getAccessToken = useCallback(() => accessTokenRef.current, []);
+  // StrictMode double-invokes the mount effect below in dev, firing two
+  // concurrent checkAuth() calls; without this guard the second (redundant)
+  // refresh-token round trip can lose the race and null out a token the
+  // first call just set. Production only ever calls this once anyway.
+  const checkAuthInFlightRef = useRef(false);
 
   const fetchMe = useCallback(async (token: string) => {
     const response = await fetch(`${API_URL}/api/auth/get-me`, {
@@ -35,6 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkAuth = useCallback(async () => {
+    if (checkAuthInFlightRef.current) return;
+    checkAuthInFlightRef.current = true;
     try {
       setIsLoading(true);
       setError(null);
@@ -64,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsLoading(false);
+      checkAuthInFlightRef.current = false;
     }
   }, [fetchMe]);
 
@@ -237,6 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         deleteAccount,
         checkAuth,
+        getAccessToken,
       }}
     >
       {children}
