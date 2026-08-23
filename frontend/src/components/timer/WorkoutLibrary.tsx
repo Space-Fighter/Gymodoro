@@ -287,9 +287,9 @@ export default function WorkoutLibrary({
               )}
             >
               <div className="rounded-lg overflow-hidden aspect-video bg-black mb-3 border border-white/5">
-                {exercise.gifUrl && getYoutubeThumbnailUrl(exercise.gifUrl) ? (
+                {exercise.gifUrl ? (
                   <img
-                    src={getYoutubeThumbnailUrl(exercise.gifUrl)!}
+                    src={getYoutubeThumbnailUrl(exercise.gifUrl) || exercise.gifUrl}
                     alt={exercise.name}
                     loading="lazy"
                     className="w-full h-full object-cover"

@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import type { ExerciseType } from "@/types/exercise";
 import GifLoop from "@/components/timer/GifLoop";
 import TagList from "@/components/timer/TagList";
+import { getYoutubeEmbedUrl } from "@/lib/youtube";
 
 interface Mode {
   id: "focus" | "short" | "long";
@@ -105,7 +106,7 @@ export default function BreakView({
 
               <TagList exercise={activity} />
 
-              <div className="rounded-lg overflow-hidden aspect-video bg-black border border-white/10">
+              <div className="w-full rounded-lg overflow-hidden aspect-video bg-black border border-white/10">
                 {activity.gifUrl ? (
                   <GifLoop gifUrl={activity.gifUrl} className="w-full h-full" />
                 ) : (
@@ -170,10 +171,10 @@ export default function BreakView({
                   <iframe
                     width="100%"
                     height="100%"
-                    src={activity.videoUrl}
+                    src={getYoutubeEmbedUrl(activity.videoUrl) || ""}
                     title="exercise video"
                     frameBorder="0"
-                    allow="encrypted-media"
+                    allow="encrypted-media; accelerometer; autoplay; clipboard-write; gyroscope; picture-in-picture"
                     allowFullScreen
                     className="w-full h-full"
                   />
