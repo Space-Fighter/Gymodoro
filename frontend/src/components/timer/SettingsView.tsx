@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { getSoundEffectsEnabled, setSoundEffectsEnabled, playChime } from "@/lib/chime";
 
 interface Props {
   contentLeft: string;
@@ -11,7 +12,7 @@ export default function SettingsView({ contentLeft }: Props) {
   const { logout, deleteAccount, user } = useAuth();
   const [autoStart, setAutoStart] = useState(true);
   const [notifications, setNotifications] = useState(true);
-  const [soundEffects, setSoundEffects] = useState(false);
+  const [soundEffects, setSoundEffects] = useState(getSoundEffectsEnabled);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -87,7 +88,12 @@ export default function SettingsView({ contentLeft }: Props) {
             Sound effects
           </span>
           <button
-            onClick={() => setSoundEffects(!soundEffects)}
+            onClick={() => {
+              const next = !soundEffects;
+              setSoundEffects(next);
+              setSoundEffectsEnabled(next);
+              if (next) playChime(true); // preview so the toggle isn't silent-until-trusted
+            }}
             className={`w-10 h-6 rounded-full transition-colors ${
               soundEffects ? "bg-emerald-500" : "bg-white/20"
             }`}

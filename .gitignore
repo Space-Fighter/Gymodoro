@@ -8,6 +8,12 @@ node_modules/
 # Personal deployment runbook (contains infra/server details)
 DEPLOYMENT.md
 
+# Local Claude Code guidance doc — not shared project documentation
+CLAUDE.md
+
+# Hackathon demo video script — personal submission asset, not project docs
+GYMODORO_DEMO_SCRIPT.md
+
 # Logs
 *.log
 

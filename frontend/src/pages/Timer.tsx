@@ -12,6 +12,7 @@ import SettingsView from "@/components/timer/SettingsView";
 import { useExercises } from "@/hooks/useExercises";
 import { getBackgroundById, DEFAULT_BACKGROUND_ID } from "@/components/timer/backgrounds";
 import StatsView from "@/components/stats/StatsView";
+import { playChime } from "@/lib/chime";
 import logo from "@/assets/gymodoro-logo.png";
 
 const BACKGROUND_STORAGE_KEY = "gymodoro-background";
@@ -172,6 +173,9 @@ export default function Timer({
     // computation — legitimate external (timer) sync.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setRunning(false);
+    // Rising tone when focus ends ("time to move"), falling tone when a
+    // break ends ("back to focus") — gated by the Sound Effects setting.
+    playChime(isFocusMode);
     if (isFocusMode) {
       beginBreakForActiveSession();
     } else {
