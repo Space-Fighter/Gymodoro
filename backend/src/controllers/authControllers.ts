@@ -211,9 +211,9 @@ export async function verifyEmail(req: Request, res: Response) {
   try {
     // When the user clicks the email link, they go to a URL like http://localhost:3000/verify-email?token=abc123. 
     // The req.query object grabs variables from the URL, so this line pulls out "abc123".
-    const { token } = req.query; 
+    const { token } = req.query;
     if (!token || typeof token !== 'string') {
-      return res.status(400).json({ message: 'Verification token is required.' });
+      return res.redirect(`${CLIENT_URL}/signin?verified=0`);
     }
     /*
     Prisma's findFirst() method returns one of two things:
@@ -226,9 +226,10 @@ export async function verifyEmail(req: Request, res: Response) {
         verificationTokenExpiry: { gt: new Date() },
       },
     });
-    // If user is null, that means either the token was invalid or it expired. In either case, we return a 400 error with a message.
+    // If user is null, that means either the token was invalid or it expired. In either case, we
+    // send them to sign-in with a flag the frontend uses to show an error instead of a raw JSON blob.
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired verification token.' });
+      return res.redirect(`${CLIENT_URL}/signin?verified=0`);
     }
     // Else we update the user's record to mark their email as verified and clear the token and expiry fields.
     await prisma.user.update({
@@ -240,10 +241,13 @@ export async function verifyEmail(req: Request, res: Response) {
       },
     });
 
-    res.status(200).json({ message: 'Email verified successfully.' });
+    // This is a link the user opens directly from their email client (a browser
+    // navigation, not a fetch call), so redirect to the frontend rather than
+    // returning JSON — there's no page here to render a response into otherwise.
+    res.redirect(`${CLIENT_URL}/signin?verified=1`);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Email verification failed.' });
+    res.redirect(`${CLIENT_URL}/signin?verified=0`);
   }
 }
 

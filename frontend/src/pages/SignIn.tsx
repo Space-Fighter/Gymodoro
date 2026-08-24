@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import logo from "@/assets/gymodoro-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
@@ -14,6 +14,22 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+
+  // Set by the backend's GET /api/auth/verify-email redirect (?verified=1|0).
+  const verificationNotice = useMemo(() => {
+    const verified = searchParams.get("verified");
+    if (verified === "1") {
+      return { kind: "success" as const, text: "Email verified! You can now sign in." };
+    }
+    if (verified === "0") {
+      return {
+        kind: "error" as const,
+        text: "That verification link is invalid or expired. Please request a new one.",
+      };
+    }
+    return null;
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -78,6 +94,18 @@ export default function SignIn() {
               Sign in to continue your productive rhythm.
             </p>
           </div>
+
+          {verificationNotice && (
+            <div
+              className={
+                verificationNotice.kind === "success"
+                  ? "mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm"
+                  : "mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm"
+              }
+            >
+              {verificationNotice.text}
+            </div>
+          )}
 
           {(error || localError) && (
             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
