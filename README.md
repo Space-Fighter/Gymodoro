@@ -1,6 +1,6 @@
 # Gymodoro
 
-gymodoro.com
+[GYMODORO LIVE LINK](gymodoro.com)
 
 A two-part pomodoro timer application with authentication. Built with React, TypeScript, Tailwind CSS, and Express.
 
