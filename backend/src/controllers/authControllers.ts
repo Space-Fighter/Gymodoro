@@ -27,6 +27,8 @@ const API_URL = process.env.API_URL || 'http://localhost:3000';
 const VERIFICATION_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const RESEND_VERIFICATION_COOLDOWN_MS = 60 * 1000; // 1 minute
+const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+const RESET_REQUEST_COOLDOWN_MS = 60 * 1000; // 1 minute
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 if (!GOOGLE_CLIENT_ID) {
@@ -134,6 +136,61 @@ async function sendVerificationEmail(email: string, rawToken: string) {
               <tr>
                 <td align="center" style="font-size:12px;color:#888888;">
                   This link expires in 24 hours. If you didn't create a Gymodoro account, you can ignore this email.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>`,
+    attachments: [
+      {
+        filename: 'gymodoro-logo.png',
+        content: Buffer.from(GYMODORO_LOGO_BASE64, 'base64'),
+        cid: 'gymodoro-logo',
+      },
+    ],
+  });
+}
+
+async function sendPasswordResetEmail(email: string, rawToken: string) {
+  const link = `${CLIENT_URL}/reset-password?token=${rawToken}`;
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM || '"No Reply" <no-reply@example.com>',
+    to: email,
+    subject: 'Reset your Gymodoro password',
+    html: `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;padding:40px;font-family:Arial,Helvetica,sans-serif;">
+              <tr>
+                <td align="center" style="font-size:20px;font-weight:700;color:#111111;padding-bottom:8px;">
+                  Reset your password
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="font-size:14px;color:#444444;padding-bottom:28px;">
+                  We received a request to reset your Gymodoro password. Click below to choose a new one.
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding-bottom:28px;">
+                  <a href="${link}"
+                     style="display:inline-block;background-color:#000000;color:#ffffff;font-weight:700;
+                            font-size:16px;letter-spacing:0.3px;text-decoration:none;
+                            padding:14px 32px;border-radius:8px;">
+                    Reset Password
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding-bottom:28px;">
+                  <img src="cid:gymodoro-logo" alt="Gymodoro" width="500" style="display:block;" />
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="font-size:12px;color:#888888;">
+                  This link expires in 1 hour. If you didn't request a password reset, you can ignore this email.
                 </td>
               </tr>
             </table>
@@ -313,6 +370,112 @@ export async function resendVerificationEmail(req: Request, res: Response) {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to resend verification email.' });
+  }
+}
+
+export async function forgotPassword(req: Request, res: Response) {
+  // Same anti-enumeration approach as resendVerificationEmail: always return
+  // this exact message whether the account exists, is Google-only (no
+  // password to reset), or the email genuinely went out.
+  const genericResponse = {
+    message: 'If an account exists for this email, a password reset link has been sent.',
+  };
+
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    // Google-only accounts (no password) have nothing to reset — treat the
+    // same as "no such user" rather than telling them to use Google, which
+    // would leak account existence.
+    if (!user || !user.password) {
+      return res.status(200).json(genericResponse);
+    }
+
+    // No dedicated "last sent at" column — same trick as resend-verification:
+    // the existing expiry encodes issue time, since it's always set to
+    // (issue time + RESET_TOKEN_EXPIRY_MS).
+    if (user.resetPasswordTokenExpiry) {
+      const lastIssuedAt = user.resetPasswordTokenExpiry.getTime() - RESET_TOKEN_EXPIRY_MS;
+      if (Date.now() - lastIssuedAt < RESET_REQUEST_COOLDOWN_MS) {
+        return res.status(429).json({ message: 'Please wait before requesting another reset email.' });
+      }
+    }
+
+    const rawResetToken = crypto.randomBytes(32).toString('hex');
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordToken: hashToken(rawResetToken),
+        resetPasswordTokenExpiry: new Date(Date.now() + RESET_TOKEN_EXPIRY_MS),
+      },
+    });
+
+    try {
+      await sendPasswordResetEmail(user.email, rawResetToken);
+    } catch (mailErr) {
+      console.error('Failed to send password reset email:', mailErr);
+      return res.status(500).json({
+        message: 'We encountered an issue sending the email. Please try again in a few moments.',
+      });
+    }
+
+    res.status(200).json(genericResponse);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to process password reset request.' });
+  }
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  try {
+    const { token, password } = req.body;
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ message: 'Reset token is required.' });
+    }
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters.' });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        resetPasswordToken: hashToken(token),
+        resetPasswordTokenExpiry: { gt: new Date() },
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordTokenExpiry: null,
+      },
+    });
+
+    // A password reset means the old password (and anything relying on it)
+    // may have been compromised — revoke every existing refresh token so
+    // all other sessions are forced to log in again with the new password.
+    await prisma.refreshToken.updateMany({
+      where: { userId: user.id, revoked: false },
+      data: { revoked: true },
+    });
+
+    res.status(200).json({ message: 'Password reset successfully. Please sign in with your new password.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to reset password.' });
   }
 }
 

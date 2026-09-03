@@ -16,7 +16,8 @@ export default function SignIn() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
 
-  // Set by the backend's GET /api/auth/verify-email redirect (?verified=1|0).
+  // Set by the backend's GET /api/auth/verify-email redirect (?verified=1|0),
+  // or by ResetPassword.tsx's redirect after a successful reset (?reset=1).
   const verificationNotice = useMemo(() => {
     const verified = searchParams.get("verified");
     if (verified === "1") {
@@ -27,6 +28,9 @@ export default function SignIn() {
         kind: "error" as const,
         text: "That verification link is invalid or expired. Please request a new one.",
       };
+    }
+    if (searchParams.get("reset") === "1") {
+      return { kind: "success" as const, text: "Password reset! Please sign in with your new password." };
     }
     return null;
   }, [searchParams]);
@@ -133,12 +137,20 @@ export default function SignIn() {
             </div>
 
             <div className="space-y-1.5 text-left">
-              <label
-                htmlFor="password"
-                className="block text-xs font-mono font-medium text-muted-foreground uppercase tracking-wider"
-              >
-                Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="password"
+                  className="block text-xs font-mono font-medium text-muted-foreground uppercase tracking-wider"
+                >
+                  Password
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-emerald-500 font-semibold hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 id="password"
                 type="password"

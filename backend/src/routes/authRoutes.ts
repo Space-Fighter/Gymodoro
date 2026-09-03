@@ -11,6 +11,8 @@ authRouter.post('/google', authController.googleLogin);
 authRouter.post('/refresh-token', authController.refreshToken);
 authRouter.post('/logout', authController.logout);
 authRouter.post('/resend-verification', authController.resendVerificationEmail);
+authRouter.post('/forgot-password', authController.forgotPassword);
+authRouter.post('/reset-password', authController.resetPassword);
 
 authRouter.get('/get-me', authController.getMe);
 authRouter.get('/verify-email', authController.verifyEmail);

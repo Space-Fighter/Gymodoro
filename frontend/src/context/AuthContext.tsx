@@ -160,6 +160,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const forgotPassword = useCallback(async (email: string): Promise<{ message: string }> => {
+    try {
+      setError(null);
+
+      const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to send password reset email");
+      }
+
+      return { message: data.message as string };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to send password reset email";
+      setError(message);
+      throw err;
+    }
+  }, []);
+
+  const resetPassword = useCallback(
+    async (token: string, password: string): Promise<{ message: string }> => {
+      try {
+        setError(null);
+
+        const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ token, password }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to reset password");
+        }
+
+        return { message: data.message as string };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to reset password";
+        setError(message);
+        throw err;
+      }
+    },
+    []
+  );
+
   const googleLogin = useCallback(async (idToken: string) => {
     try {
       setIsLoading(true);
@@ -242,6 +293,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         resendVerification,
+        forgotPassword,
+        resetPassword,
         googleLogin,
         logout,
         deleteAccount,

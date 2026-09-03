@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RotateCcw, Pause, Play, Dice6 } from "lucide-react";
+import { RotateCcw, Pause, Play, Dice6, PictureInPicture2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ExerciseType } from "@/types/exercise";
 import GifLoop from "@/components/timer/GifLoop";
@@ -56,6 +56,7 @@ interface Props {
   onSwitchMode: (mode: "focus" | "short" | "long") => void;
   onToggleStart: () => void;
   onReset: () => void;
+  onPopOut?: () => void;
   contentLeft: string;
   activity: ExerciseType | null;
   onActivityChange: () => void;
@@ -73,6 +74,7 @@ export default function BreakView({
   onSwitchMode,
   onToggleStart,
   onReset,
+  onPopOut,
   contentLeft,
   activity,
   onActivityChange,
@@ -253,6 +255,19 @@ export default function BreakView({
               >
                 {running ? <Pause size={18} /> : <Play size={18} />}
                 {running ? "Pause" : "Start"}
+              </button>
+
+              <button
+                onClick={onPopOut}
+                aria-label="Pop out timer"
+                title="Pop out timer"
+                className={cn(
+                  "w-12 h-12 rounded-full border border-white/25 bg-white/6",
+                  "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
+                  "hover:bg-white/12 transition-colors"
+                )}
+              >
+                <PictureInPicture2 size={18} className="stroke-2" />
               </button>
             </div>
           </div>

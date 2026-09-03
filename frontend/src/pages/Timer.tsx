@@ -12,7 +12,8 @@ import SettingsView from "@/components/timer/SettingsView";
 import { useExercises } from "@/hooks/useExercises";
 import { getBackgroundById, DEFAULT_BACKGROUND_ID } from "@/components/timer/backgrounds";
 import StatsView from "@/components/stats/StatsView";
-import { playChime } from "@/lib/chime";
+import { playChime, scheduleChime } from "@/lib/chime";
+import { useTimerPopout } from "@/hooks/useTimerPopout";
 import logo from "@/assets/gymodoro-logo.png";
 
 const BACKGROUND_STORAGE_KEY = "gymodoro-background";
@@ -52,6 +53,12 @@ export default function Timer({
     }
   });
   const timerInterval = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  // Wall-clock instant the current run should hit 0, in ms (Date.now() epoch).
+  // The countdown is derived from this, not from counting ticks, so background-
+  // tab throttling / frozen timers can't make the clock drift.
+  const deadlineRef = useRef<number | null>(null);
+  // Cancels the chime pre-scheduled on the audio clock for the current run.
+  const cancelChimeRef = useRef<(() => void) | null>(null);
 
   const { exercises, loading } = useExercises();
 
@@ -152,17 +159,56 @@ export default function Timer({
     activeSessionRef.current = null;
   }, [authedFetch]);
 
-  useEffect(() => {
-    if (!running) return;
+  const cancelScheduledChime = useCallback(() => {
+    cancelChimeRef.current?.();
+    cancelChimeRef.current = null;
+  }, []);
 
-    timerInterval.current = setInterval(() => {
-      setRemaining((prev) => (prev <= 1 ? 0 : prev - 1));
-    }, 1000);
+  useEffect(() => {
+    if (!running) {
+      deadlineRef.current = null;
+      cancelScheduledChime();
+      return;
+    }
+
+    // Recompute `remaining` from the deadline. Safe to call from a throttled
+    // tick, from visibilitychange, or on a fresh start — it always reflects
+    // real elapsed time.
+    const syncFromDeadline = () => {
+      if (deadlineRef.current === null) {
+        // First run of this effect (start / resume): anchor the deadline to
+        // the value the countdown currently shows.
+        deadlineRef.current = Date.now() + remaining * 1000;
+        return;
+      }
+      const secsLeft = Math.max(
+        0,
+        Math.round((deadlineRef.current - Date.now()) / 1000)
+      );
+      setRemaining(secsLeft);
+    };
+
+    syncFromDeadline();
+
+    // Pre-schedule the end-of-phase chime on the audio clock so it rings at
+    // the right instant even if this tab is backgrounded and JS timers freeze.
+    if (deadlineRef.current !== null) {
+      const secsLeft = Math.max(0, (deadlineRef.current - Date.now()) / 1000);
+      cancelChimeRef.current = scheduleChime(isFocusMode, secsLeft);
+    }
+
+    timerInterval.current = setInterval(syncFromDeadline, 250);
+    document.addEventListener("visibilitychange", syncFromDeadline);
 
     return () => {
       if (timerInterval.current) clearInterval(timerInterval.current);
+      document.removeEventListener("visibilitychange", syncFromDeadline);
+      cancelScheduledChime();
     };
-  }, [running]);
+    // `remaining` is intentionally read only to anchor the deadline on the
+    // first run; adding it to deps would restart the interval every tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running, isFocusMode, cancelScheduledChime]);
 
   // Fires the phase-completion side effect exactly once when the countdown
   // reaches 0 — kept out of the setRemaining updater above, since StrictMode
@@ -175,7 +221,9 @@ export default function Timer({
     setRunning(false);
     // Rising tone when focus ends ("time to move"), falling tone when a
     // break ends ("back to focus") — gated by the Sound Effects setting.
-    playChime(isFocusMode);
+    // If a chime was pre-scheduled on the audio clock it has already rung
+    // (or is about to), so only play here when nothing was scheduled.
+    if (!cancelChimeRef.current) playChime(isFocusMode);
     if (isFocusMode) {
       beginBreakForActiveSession();
     } else {
@@ -221,6 +269,16 @@ export default function Timer({
 
   const addTime = (minutes: number) => {
     setRemaining((prev) => prev + minutes * 60);
+    // Keep the deadline in sync while running, otherwise the next tick would
+    // immediately overwrite the added time.
+    if (deadlineRef.current !== null) {
+      deadlineRef.current += minutes * 60 * 1000;
+      // The pre-scheduled chime is now at the wrong instant — cancel and
+      // re-schedule it for the new deadline.
+      cancelScheduledChime();
+      const secsLeft = Math.max(0, (deadlineRef.current - Date.now()) / 1000);
+      cancelChimeRef.current = scheduleChime(isFocusMode, secsLeft);
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -229,6 +287,16 @@ export default function Timer({
     const secs = s % 60;
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
+
+  const { popOut: popOutTimer } = useTimerPopout({
+    remaining,
+    running,
+    label: currentMode.label,
+    backgroundUrl: getBackgroundById(backgroundId).imageUrl,
+    formatTime,
+    onToggleStart: toggleStart,
+    onReset: reset,
+  });
 
   const contentLeft = sidebarOpen ? "260px" : "90px";
 
@@ -313,6 +381,7 @@ export default function Timer({
                   onToggleStart={toggleStart}
                   onReset={reset}
                   onAddTime={addTime}
+                  onPopOut={popOutTimer}
                   contentLeft={contentLeft}
                 />
               </div>
@@ -327,6 +396,7 @@ export default function Timer({
                   onSwitchMode={switchMode}
                   onToggleStart={toggleStart}
                   onReset={reset}
+                  onPopOut={popOutTimer}
                   contentLeft={contentLeft}
                   activity={currentActivity}
                   onActivityChange={() =>
