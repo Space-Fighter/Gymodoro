@@ -211,7 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const googleLogin = useCallback(async (idToken: string) => {
+  const googleLogin = useCallback(async (idToken: string, mode: "login" | "signup") => {
     try {
       setIsLoading(true);
       setError(null);
@@ -220,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ idToken, mode }),
       });
 
       const data = await response.json();

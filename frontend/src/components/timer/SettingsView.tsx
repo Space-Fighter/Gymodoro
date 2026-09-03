@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { getSoundEffectsEnabled, setSoundEffectsEnabled, playChime } from "@/lib/chime";
+import { getAutoStartBreaksEnabled, setAutoStartBreaksEnabled } from "@/lib/timerSettings";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
 export default function SettingsView({ contentLeft }: Props) {
   const navigate = useNavigate();
   const { logout, deleteAccount, user } = useAuth();
-  const [autoStart, setAutoStart] = useState(true);
+  const [autoStart, setAutoStart] = useState(getAutoStartBreaksEnabled);
   const [notifications, setNotifications] = useState(true);
   const [soundEffects, setSoundEffects] = useState(getSoundEffectsEnabled);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -59,7 +60,11 @@ export default function SettingsView({ contentLeft }: Props) {
             Auto-start breaks
           </span>
           <button
-            onClick={() => setAutoStart(!autoStart)}
+            onClick={() => {
+              const next = !autoStart;
+              setAutoStart(next);
+              setAutoStartBreaksEnabled(next);
+            }}
             className={`w-10 h-6 rounded-full transition-colors ${
               autoStart ? "bg-emerald-500" : "bg-white/20"
             }`}
@@ -125,12 +130,12 @@ export default function SettingsView({ contentLeft }: Props) {
       {/* User Info */}
       <div
         ref={userInfoGlassRef}
-        className="glass mt-8 p-4 rounded-2xl border border-white/10"
+        className="glass mt-8 p-4 rounded-2xl border border-white/10 max-w-md w-fit"
       >
         <p className="text-xs text-white/50 font-poppins mb-2 uppercase">
           Logged in as
         </p>
-        <p className="text-sm text-white font-semibold">{user?.email}</p>
+        <p className="text-sm text-white font-semibold whitespace-nowrap">{user?.email}</p>
       </div>
 
       {/* Logout Button */}

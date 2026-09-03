@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,8 @@ import SettingsView from "@/components/timer/SettingsView";
 import { useExercises } from "@/hooks/useExercises";
 import { getBackgroundById, DEFAULT_BACKGROUND_ID } from "@/components/timer/backgrounds";
 import StatsView from "@/components/stats/StatsView";
-import { playChime, scheduleChime } from "@/lib/chime";
+import { playAlarmChime, scheduleAlarmChime } from "@/lib/chime";
+import { getAutoStartBreaksEnabled } from "@/lib/timerSettings";
 import { useTimerPopout } from "@/hooks/useTimerPopout";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 import logo from "@/assets/gymodoro-logo.png";
@@ -22,6 +23,15 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 type TabType = "timer" | "workout" | "background" | "stats" | "settings";
 type TimerMode = "focus" | "short" | "long";
+
+// Standard Pomodoro cycle: focus -> short break, repeated, but every 4th
+// focus session is followed by a long break instead. Breaks always return
+// to focus. `completedFocusCount` is the number of focus sessions finished
+// so far (including the one that just ended).
+function getNextTimerMode(current: TimerMode, completedFocusCount: number): TimerMode {
+  if (current !== "focus") return "focus";
+  return completedFocusCount % 4 === 0 ? "long" : "short";
+}
 
 interface Props {
   focusMinutes?: number;
@@ -60,6 +70,9 @@ export default function Timer({
   const deadlineRef = useRef<number | null>(null);
   // Cancels the chime pre-scheduled on the audio clock for the current run.
   const cancelChimeRef = useRef<(() => void) | null>(null);
+  // Number of focus sessions completed so far this cycle — every 4th one
+  // triggers a long break instead of a short one (see getNextTimerMode).
+  const focusCountRef = useRef(0);
 
   const { exercises, loading } = useExercises();
 
@@ -81,11 +94,16 @@ export default function Timer({
     }
   }, [backgroundId]);
 
-  const modes = [
-    { id: "focus" as const, label: "Focus", duration: focusMinutes },
-    { id: "short" as const, label: "Short Break", duration: shortBreakMinutes },
-    { id: "long" as const, label: "Long Break", duration: longBreakMinutes },
-  ];
+  // Memoized so the auto-advance effect below (which depends on it) doesn't
+  // re-run on every render — only when the configured durations change.
+  const modes = useMemo(
+    () => [
+      { id: "focus" as const, label: "Focus", duration: focusMinutes },
+      { id: "short" as const, label: "Short Break", duration: shortBreakMinutes },
+      { id: "long" as const, label: "Long Break", duration: longBreakMinutes },
+    ],
+    [focusMinutes, shortBreakMinutes, longBreakMinutes]
+  );
 
   const currentMode = modes.find((m) => m.id === timerMode)!;
   const currentActivity = exercises[activityIdx] || null;
@@ -166,9 +184,12 @@ export default function Timer({
   }, []);
 
   useEffect(() => {
+    // Clear any chime left over from the previous transition first — e.g. the
+    // end-of-phase alarm can still be ringing when the next phase starts.
+    cancelScheduledChime();
+
     if (!running) {
       deadlineRef.current = null;
-      cancelScheduledChime();
       return;
     }
 
@@ -191,11 +212,12 @@ export default function Timer({
 
     syncFromDeadline();
 
-    // Pre-schedule the end-of-phase chime on the audio clock so it rings at
-    // the right instant even if this tab is backgrounded and JS timers freeze.
+    // Pre-schedule the end-of-phase alarm on the audio clock so it rings at
+    // the right instant (and keeps ringing for a while) even if this tab is
+    // backgrounded and JS timers freeze.
     if (deadlineRef.current !== null) {
       const secsLeft = Math.max(0, (deadlineRef.current - Date.now()) / 1000);
-      cancelChimeRef.current = scheduleChime(isFocusMode, secsLeft);
+      cancelChimeRef.current = scheduleAlarmChime(isFocusMode, secsLeft);
     }
 
     timerInterval.current = setInterval(syncFromDeadline, 250);
@@ -216,21 +238,49 @@ export default function Timer({
   // double-invokes updater functions in dev to catch impure ones like that.
   useEffect(() => {
     if (!running || remaining > 0) return;
-    // Stopping because the countdown reached zero, not a derived render
-    // computation — legitimate external (timer) sync.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRunning(false);
     // Rising tone when focus ends ("time to move"), falling tone when a
     // break ends ("back to focus") — gated by the Sound Effects setting.
     // If a chime was pre-scheduled on the audio clock it has already rung
-    // (or is about to), so only play here when nothing was scheduled.
-    if (!cancelChimeRef.current) playChime(isFocusMode);
+    // (or is about to); only start it here when nothing was scheduled. It
+    // keeps ringing for ~30s, or until the next phase starts (whichever is
+    // first — starting a phase cancels it via the running-effect above).
+    if (!cancelChimeRef.current) {
+      cancelChimeRef.current = playAlarmChime(isFocusMode);
+    }
+
     if (isFocusMode) {
       beginBreakForActiveSession();
+      focusCountRef.current += 1;
     } else {
       completeActiveSession();
     }
-  }, [remaining, running, isFocusMode, beginBreakForActiveSession, completeActiveSession]);
+
+    // Auto-advance through the Pomodoro cycle: focus -> short break (long
+    // break every 4th focus session) -> focus -> ... Whether the next phase
+    // starts counting down immediately is gated by the Auto-start breaks
+    // setting; when it's off the countdown just resets to the next phase,
+    // paused, same as a manual mode switch.
+    const nextId = getNextTimerMode(timerMode, focusCountRef.current);
+    const nextModeDef = modes.find((m) => m.id === nextId);
+    if (!nextModeDef) {
+      setRunning(false);
+      return;
+    }
+    const autoStart = getAutoStartBreaksEnabled();
+    setTimerMode(nextId);
+    setRemaining(nextModeDef.duration * 60);
+    setRunning(autoStart);
+    if (autoStart && nextId === "focus") startFocusSession();
+  }, [
+    remaining,
+    running,
+    isFocusMode,
+    timerMode,
+    modes,
+    beginBreakForActiveSession,
+    completeActiveSession,
+    startFocusSession,
+  ]);
 
   const toggleStart = useCallback(() => {
     const next = !running;
@@ -247,6 +297,10 @@ export default function Timer({
 
   const switchMode = (id: TimerMode) => {
     if (timerInterval.current) clearInterval(timerInterval.current);
+    // Silence an end-of-phase alarm still ringing from the phase being left —
+    // running is already false at that point, so the running-effect above
+    // won't fire to cancel it on its own.
+    cancelScheduledChime();
     const mode = modes.find((m) => m.id === id);
     if (mode) {
       const activePhase = activeSessionRef.current?.phase;
@@ -263,6 +317,8 @@ export default function Timer({
 
   const reset = () => {
     if (timerInterval.current) clearInterval(timerInterval.current);
+    // Same reasoning as switchMode above — silence any ringing alarm.
+    cancelScheduledChime();
     if (activeSessionRef.current) abandonActiveSession();
     setRemaining(currentMode.duration * 60);
     setRunning(false);
@@ -278,7 +334,7 @@ export default function Timer({
       // re-schedule it for the new deadline.
       cancelScheduledChime();
       const secsLeft = Math.max(0, (deadlineRef.current - Date.now()) / 1000);
-      cancelChimeRef.current = scheduleChime(isFocusMode, secsLeft);
+      cancelChimeRef.current = scheduleAlarmChime(isFocusMode, secsLeft);
     }
   };
 

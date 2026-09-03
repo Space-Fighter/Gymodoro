@@ -47,7 +47,7 @@ export default function SignUp() {
     async (idToken: string) => {
       setLocalError(null);
       try {
-        await googleLogin(idToken);
+        await googleLogin(idToken, "signup");
         navigate("/");
       } catch (err) {
         setLocalError(err instanceof Error ? err.message : "Google sign-in failed");

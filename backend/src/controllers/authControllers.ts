@@ -534,9 +534,12 @@ export async function login(req: Request, res: Response) {
 // This avoids a server-side redirect dance and fits your stateless JWT setup.
 export async function googleLogin(req: Request, res: Response) {
   try {
-    const { idToken } = req.body;
+    const { idToken, mode } = req.body;
     if (!idToken) {
       return res.status(400).json({ message: 'Google ID token is required.' });
+    }
+    if (mode !== 'login' && mode !== 'signup') {
+      return res.status(400).json({ message: 'A valid mode ("login" or "signup") is required.' });
     }
 
     const ticket = await googleClient.verifyIdToken({
@@ -548,10 +551,29 @@ export async function googleLogin(req: Request, res: Response) {
     if (!payload || !payload.email) {
       return res.status(401).json({ message: 'Invalid Google token.' });
     }
+    // Google can, in non-standard flows, issue a token whose email claim it
+    // hasn't itself verified — never trust the email without this check.
+    if (!payload.email_verified) {
+      return res.status(401).json({ message: 'Google account email is not verified.' });
+    }
 
     const { email, name, sub: googleId } = payload;
 
     let user = await prisma.user.findUnique({ where: { email } });
+
+    // Enforce sign-up/sign-in as distinct actions for Google too, matching
+    // the password flow: signing up must not silently log an existing user
+    // in, and signing in must not silently create a new account.
+    if (mode === 'signup' && user) {
+      return res.status(409).json({
+        message: 'An account with this email already exists. Please sign in instead.',
+      });
+    }
+    if (mode === 'login' && !user) {
+      return res.status(404).json({
+        message: 'No account found with this email. Please sign up first.',
+      });
+    }
 
     if (user) {
       // Existing account (e.g. originally registered with a password) —

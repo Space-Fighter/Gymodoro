@@ -50,7 +50,7 @@ export default function SignIn() {
     async (idToken: string) => {
       setLocalError(null);
       try {
-        await googleLogin(idToken);
+        await googleLogin(idToken, "login");
         navigate("/");
       } catch (err) {
         setLocalError(err instanceof Error ? err.message : "Google sign-in failed");
