@@ -188,8 +188,20 @@ export default function Timer({
     // end-of-phase alarm can still be ringing when the next phase starts.
     cancelScheduledChime();
 
+    // Every re-run of this effect starts tracking a *new* countdown period
+    // (a fresh manual start/resume, or the next auto-advanced phase) and
+    // must anchor the deadline fresh from the `remaining` value that was
+    // just set for it — never carry over the previous phase's deadline.
+    // Without this, when auto-advance keeps `running` true across a
+    // transition (isFocusMode still changes, so this effect does re-run,
+    // but `running`'s own value doesn't), the old deadline stayed non-null
+    // from the phase that just ended, so `syncFromDeadline` below skipped
+    // its "anchor fresh" branch and immediately clamped the brand-new
+    // phase's countdown back to 0 — instantly completing it again, and
+    // again, in a tight loop (the flicker + rapid-fire alarm reported).
+    deadlineRef.current = null;
+
     if (!running) {
-      deadlineRef.current = null;
       return;
     }
 
