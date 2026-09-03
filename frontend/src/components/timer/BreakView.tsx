@@ -5,6 +5,7 @@ import type { ExerciseType } from "@/types/exercise";
 import GifLoop from "@/components/timer/GifLoop";
 import TagList from "@/components/timer/TagList";
 import { getYoutubeEmbedUrl } from "@/lib/youtube";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 
 interface Mode {
   id: "focus" | "short" | "long";
@@ -30,13 +31,16 @@ function DropdownToggle({
   open: boolean;
   onToggle: () => void;
 }) {
+  const glassRef = useLiquidGlass<HTMLButtonElement>({ scale: -60, chroma: 4, blur: 4 });
+
   return (
     <button
+      ref={glassRef}
       onClick={onToggle}
       className={cn(
-        "w-full flex items-center justify-between px-4 py-3 rounded-lg",
-        "border border-white/15 bg-black/35 backdrop-blur-md",
-        "text-white text-sm font-semibold hover:bg-black/50 transition-colors"
+        "glass-tight w-full flex items-center justify-between px-4 py-3 rounded-lg",
+        "border border-white/15",
+        "text-white text-sm font-semibold hover:brightness-125 transition-[filter]"
       )}
     >
       <span>{label}</span>
@@ -85,6 +89,20 @@ export default function BreakView({
   const [muscleDiagramOpen, setMuscleDiagramOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(true);
 
+  const diceGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -70, chroma: 5, blur: 4 });
+  const chooseGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -70, chroma: 5, blur: 4 });
+  const muscleDiagramGlassRef = useLiquidGlass<HTMLDivElement>({ scale: -80, chroma: 5, blur: 4 });
+  const descriptionGlassRef = useLiquidGlass<HTMLDivElement>({ scale: -80, chroma: 5, blur: 4 });
+  const controlDeckGlassRef = useLiquidGlass<HTMLDivElement>({
+    scale: -100,
+    chroma: 5,
+    mapBlur: 18,
+    blur: 5,
+    saturate: 1.4,
+  });
+  const resetGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -60, chroma: 4, blur: 3 });
+  const popOutGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -60, chroma: 4, blur: 3 });
+
   return (
     <div
       className="absolute inset-0 flex flex-col z-10 pt-36 px-6"
@@ -117,14 +135,16 @@ export default function BreakView({
         <div className="flex flex-col gap-4 overflow-y-auto pr-4">
           <div className="flex gap-3">
             <button
+              ref={diceGlassRef}
               onClick={onActivityChange}
-              className="flex-1 px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/15 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
+              className="glass-tight flex-1 px-4 py-3 rounded-lg border border-white/20 hover:brightness-125 text-white font-bold text-sm transition-[filter] flex items-center justify-center gap-2"
             >
               <Dice6 size={18} /> Roll The Dice
             </button>
             <button
+              ref={chooseGlassRef}
               onClick={onActivitySelect}
-              className="flex-1 px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/15 text-white font-bold text-sm transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
+              className="glass-tight flex-1 px-4 py-3 rounded-lg border border-white/20 hover:brightness-125 text-white font-bold text-sm transition-[filter]"
             >
               Choose Activity
             </button>
@@ -154,7 +174,10 @@ export default function BreakView({
                     onToggle={() => setMuscleDiagramOpen((o) => !o)}
                   />
                   {muscleDiagramOpen && (
-                    <div className="flex justify-center rounded-lg overflow-hidden bg-black/20 border border-white/10 p-2">
+                    <div
+                      ref={muscleDiagramGlassRef}
+                      className="glass-tight flex justify-center rounded-lg overflow-hidden border border-white/10 p-2"
+                    >
                       <img
                         src={activity.muscleDiagramUrl}
                         alt={`${activity.name} muscle diagram`}
@@ -206,7 +229,10 @@ export default function BreakView({
                 onToggle={onToggleDescription}
               />
               {descriptionOpen && (
-                <div className="px-4 py-3 rounded-lg bg-black/30 backdrop-blur-md border border-white/10 text-white text-sm leading-relaxed max-h-40 overflow-y-auto">
+                <div
+                  ref={descriptionGlassRef}
+                  className="glass-tight px-4 py-3 rounded-lg border border-white/10 text-white text-sm leading-relaxed max-h-40 overflow-y-auto"
+                >
                   {activity.description ? (
                     <ul className="list-disc pl-5 space-y-1.5">
                       {descriptionToBullets(activity.description).map((sentence, i) => (
@@ -224,8 +250,9 @@ export default function BreakView({
           {/* Timer — shrinks when the description panel is open so it can
               never be pushed into overlapping the content above it. */}
           <div
+            ref={controlDeckGlassRef}
             className={cn(
-              "flex flex-col items-center gap-4 mt-auto shrink-0 transition-all",
+              "glass flex flex-col items-center gap-4 mt-auto shrink-0 rounded-3xl px-8 py-6 transition-[margin]",
               descriptionOpen ? "mb-6" : "mb-12"
             )}
           >
@@ -238,12 +265,13 @@ export default function BreakView({
 
             <div className="flex items-center gap-3">
               <button
+                ref={resetGlassRef}
                 onClick={onReset}
                 aria-label="Reset"
                 className={cn(
-                  "w-12 h-12 rounded-full border border-white/25 bg-white/6",
-                  "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
-                  "hover:bg-white/12 transition-colors"
+                  "glass-tight w-12 h-12 rounded-full border border-white/25",
+                  "text-white cursor-pointer flex items-center justify-center",
+                  "hover:brightness-125 transition-[filter]"
                 )}
               >
                 <RotateCcw size={18} className="stroke-2" />
@@ -258,13 +286,14 @@ export default function BreakView({
               </button>
 
               <button
+                ref={popOutGlassRef}
                 onClick={onPopOut}
                 aria-label="Pop out timer"
                 title="Pop out timer"
                 className={cn(
-                  "w-12 h-12 rounded-full border border-white/25 bg-white/6",
-                  "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
-                  "hover:bg-white/12 transition-colors"
+                  "glass-tight w-12 h-12 rounded-full border border-white/25",
+                  "text-white cursor-pointer flex items-center justify-center",
+                  "hover:brightness-125 transition-[filter]"
                 )}
               >
                 <PictureInPicture2 size={18} className="stroke-2" />

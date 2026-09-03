@@ -175,3 +175,33 @@
 .animate-wave-bar {
   animation: wave-bounce 1s ease-in-out infinite;
 }
+
+/* Liquid glass material dressing — paired with useLiquidGlass()
+   (frontend/src/hooks/useLiquidGlass.ts), which owns the SVG refraction;
+   these classes are the tint/specular-highlight/shadow that make the
+   refracted rim actually read as glass instead of an invisible filter. */
+.glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.3));
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.35),
+    inset 0 -6px 18px rgba(255, 255, 255, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* Lighter dressing for small interactive elements (buttons, pills, dropdown
+   toggles) — the full .glass shadow reads as too heavy at that scale. */
+.glass-tight {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.22));
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+/* liquid-glass.js adds this class itself on Safari/Firefox, where it falls
+   back to a plain frosted blur instead of SVG refraction — keep the tint
+   from fighting that fallback rather than layering on top of it. */
+.lg-fallback {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.32));
+}

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import type { ExerciseType } from "@/types/exercise";
 import { getYoutubeThumbnailUrl } from "@/lib/youtube";
 import TagList from "@/components/timer/TagList";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 
 interface Props {
   exercises: ExerciseType[];
@@ -59,6 +60,12 @@ export default function WorkoutLibrary({
     0
   );
 
+  const searchGlassRef = useLiquidGlass<HTMLInputElement>({ scale: -65, chroma: 4, blur: 4 });
+  const filtersButtonGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -65, chroma: 4, blur: 4 });
+  // The filters dropdown is deliberately left as a plain opaque panel, not
+  // glass: it's a dense grid of small filter-chip text, and refraction plus
+  // a translucent tint would fight legibility there more than it would help.
+
   if (loading) {
     return (
       <div
@@ -90,13 +97,14 @@ export default function WorkoutLibrary({
               className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40"
             />
             <input
+              ref={searchGlassRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search exercises..."
               className={cn(
-                "w-64 pl-9 pr-3 py-2.5 rounded-lg",
-                "border border-white/20 bg-black/40 backdrop-blur-md",
+                "glass-tight w-64 pl-9 pr-3 py-2.5 rounded-lg",
+                "border border-white/20",
                 "text-white text-sm placeholder:text-white/40",
                 "outline-none focus:border-white/40 transition-colors"
               )}
@@ -105,11 +113,12 @@ export default function WorkoutLibrary({
 
           <div className="relative">
             <button
+              ref={filtersButtonGlassRef}
               onClick={() => setFiltersOpen(!filtersOpen)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2.5 rounded-lg",
-                "border border-white/20 bg-black/40 backdrop-blur-md",
-                "text-white text-sm font-semibold hover:bg-black/55 transition-colors"
+                "glass-tight flex items-center gap-2 px-4 py-2.5 rounded-lg",
+                "border border-white/20",
+                "text-white text-sm font-semibold hover:brightness-125 transition-[filter]"
               )}
             >
               <Sliders size={15} />

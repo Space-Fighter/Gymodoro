@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { getSoundEffectsEnabled, setSoundEffectsEnabled, playChime } from "@/lib/chime";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 
 interface Props {
   contentLeft: string;
@@ -15,6 +16,11 @@ export default function SettingsView({ contentLeft }: Props) {
   const [soundEffects, setSoundEffects] = useState(getSoundEffectsEnabled);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const autoStartGlassRef = useLiquidGlass<HTMLDivElement>({ scale: -80, chroma: 5, blur: 4 });
+  const notificationsGlassRef = useLiquidGlass<HTMLDivElement>({ scale: -80, chroma: 5, blur: 4 });
+  const soundGlassRef = useLiquidGlass<HTMLDivElement>({ scale: -80, chroma: 5, blur: 4 });
+  const userInfoGlassRef = useLiquidGlass<HTMLDivElement>({ scale: -80, chroma: 5, blur: 4 });
 
   const handleLogout = async () => {
     await logout();
@@ -45,7 +51,10 @@ export default function SettingsView({ contentLeft }: Props) {
 
       <div className="max-w-md space-y-2">
         {/* Auto-start Breaks */}
-        <div className="flex items-center justify-between px-4 py-3.5 rounded-2xl bg-black/45 backdrop-blur-lg border border-white/10">
+        <div
+          ref={autoStartGlassRef}
+          className="glass flex items-center justify-between px-4 py-3.5 rounded-2xl border border-white/10"
+        >
           <span className="text-sm text-white/80 font-poppins">
             Auto-start breaks
           </span>
@@ -64,7 +73,10 @@ export default function SettingsView({ contentLeft }: Props) {
         </div>
 
         {/* Notifications */}
-        <div className="flex items-center justify-between px-4 py-3.5 rounded-2xl bg-black/45 backdrop-blur-lg border border-white/10">
+        <div
+          ref={notificationsGlassRef}
+          className="glass flex items-center justify-between px-4 py-3.5 rounded-2xl border border-white/10"
+        >
           <span className="text-sm text-white/80 font-poppins">
             Notifications
           </span>
@@ -83,7 +95,10 @@ export default function SettingsView({ contentLeft }: Props) {
         </div>
 
         {/* Sound Effects */}
-        <div className="flex items-center justify-between px-4 py-3.5 rounded-2xl bg-black/45 backdrop-blur-lg border border-white/10">
+        <div
+          ref={soundGlassRef}
+          className="glass flex items-center justify-between px-4 py-3.5 rounded-2xl border border-white/10"
+        >
           <span className="text-sm text-white/80 font-poppins">
             Sound effects
           </span>
@@ -108,7 +123,10 @@ export default function SettingsView({ contentLeft }: Props) {
       </div>
 
       {/* User Info */}
-      <div className="mt-8 p-4 rounded-2xl bg-black/45 backdrop-blur-lg border border-white/10">
+      <div
+        ref={userInfoGlassRef}
+        className="glass mt-8 p-4 rounded-2xl border border-white/10"
+      >
         <p className="text-xs text-white/50 font-poppins mb-2 uppercase">
           Logged in as
         </p>

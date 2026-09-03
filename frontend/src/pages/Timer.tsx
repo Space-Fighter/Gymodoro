@@ -14,6 +14,7 @@ import { getBackgroundById, DEFAULT_BACKGROUND_ID } from "@/components/timer/bac
 import StatsView from "@/components/stats/StatsView";
 import { playChime, scheduleChime } from "@/lib/chime";
 import { useTimerPopout } from "@/hooks/useTimerPopout";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 import logo from "@/assets/gymodoro-logo.png";
 
 const BACKGROUND_STORAGE_KEY = "gymodoro-background";
@@ -299,6 +300,8 @@ export default function Timer({
   });
 
   const contentLeft = sidebarOpen ? "260px" : "90px";
+  const logoutGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -60, chroma: 3, blur: 4 });
+  const collapsedToggleGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -60, chroma: 3, blur: 4 });
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-black">
@@ -325,15 +328,16 @@ export default function Timer({
 
       {/* Logout Button */}
       <button
+        ref={logoutGlassRef}
         onClick={async () => {
           await logout();
           navigate("/welcome");
         }}
         className={cn(
-          "absolute top-3 right-3 z-30 h-9 px-3 rounded-lg",
-          "border border-white/15 bg-black/40 backdrop-blur-md",
+          "glass-tight absolute top-3 right-3 z-30 h-9 px-3 rounded-lg",
+          "border border-white/15",
           "flex items-center justify-center gap-1.5 text-white/70 text-sm font-semibold font-poppins",
-          "hover:bg-black/60 hover:text-white transition-colors"
+          "hover:text-white transition-colors"
         )}
         aria-label="Logout"
       >
@@ -352,11 +356,12 @@ export default function Timer({
       {/* Collapsed Toggle Button */}
       {!sidebarOpen && (
         <button
+          ref={collapsedToggleGlassRef}
           onClick={() => setSidebarOpen(true)}
           className={cn(
-            "absolute z-20 w-14 h-14 rounded-lg border border-white/15 backdrop-blur-md",
-            "bg-transparent hover:bg-black/60 flex items-center justify-center",
-            "text-white/70 transition-colors"
+            "glass-tight absolute z-20 w-14 h-14 rounded-lg border border-white/15",
+            "hover:brightness-125 flex items-center justify-center",
+            "text-white/70 transition-[filter]"
           )}
           style={{ left: "16px", top: "116px" }}
         >
