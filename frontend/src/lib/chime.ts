@@ -1,10 +1,16 @@
 const SOUND_EFFECTS_KEY = "gymodoro-sound-effects";
 
+// Defaults to "on" — the end-of-phase alarm is core functionality (you'd
+// otherwise have no idea a focus/break period ended), not an optional
+// decoration, so it should ring out of the box. This toggle exists so a user
+// who explicitly wants silence can still turn it off; it just shouldn't be
+// off by default.
 export function getSoundEffectsEnabled(): boolean {
   try {
-    return localStorage.getItem(SOUND_EFFECTS_KEY) === "true";
+    const v = localStorage.getItem(SOUND_EFFECTS_KEY);
+    return v === null ? true : v === "true";
   } catch {
-    return false;
+    return true;
   }
 }
 
