@@ -6,21 +6,23 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useMotionValueEvent, type MotionValue } from "framer-motion";
+import { type MotionValue } from "framer-motion";
 import { AUDIO_BEDS, SOUND_PREF_KEY } from "./audio";
 import { SceneAudioContext, type SceneAudio } from "./sceneAudioContext";
 
 /**
- * Scroll-driven music director. Creates one <audio> element per bed (routed
- * through a Web Audio GainNode) and crossfades their gains as the story's
- * scrollYProgress moves. Audio is OFF until the visitor flips the sound toggle
- * (browsers block autoplay) — `enabled` + `toggle` are exposed for the Navbar.
+ * Scroll-driven music director. One looping <audio> per bed, each through a
+ * GainNode. A rAF loop (running the whole time sound is enabled) reads the
+ * story's scroll progress every frame and crossfades the bed gains — so the
+ * score keeps playing and stays correct even when the visitor stops scrolling.
+ * Audio is OFF until the sound toggle is pressed (browsers block autoplay).
  *
- * Phase-A note: this is functional but degrades to silence when no audio files
- * are present in `assets/welcome/audio/` yet. `agent-audio` supplies the files
- * and may refine the fade curve; the public shape here (`useSceneAudio`) is
- * stable.
+ * Bed ranges overlap (see `audio.ts`); within `[start,end]` a bed is at full
+ * gain, ramping over `FADE` on each side, so neighbours always crossfade and
+ * there is never a silent gap.
  */
+
+const FADE = 0.07;
 
 function readPref(): boolean {
   try {
@@ -28,6 +30,13 @@ function readPref(): boolean {
   } catch {
     return false;
   }
+}
+
+/** Bed level at scroll `p`: 1 inside [s,e], linear ramp over FADE outside. */
+function windowLevel(p: number, s: number, e: number): number {
+  if (p >= s && p <= e) return 1;
+  if (p < s) return Math.max(0, 1 - (s - p) / FADE);
+  return Math.max(0, 1 - (p - e) / FADE);
 }
 
 export function SceneAudioProvider({
@@ -43,13 +52,13 @@ export function SceneAudioProvider({
   const nodesRef = useRef<
     { el: HTMLAudioElement; gain: GainNode; bedGain: number; range: [number, number] }[]
   >([]);
+  const rafRef = useRef(0);
 
   const available = useMemo(
     () => AUDIO_BEDS.some((b) => b.src || b.fallbackSrc),
     [],
   );
 
-  // Build the graph lazily on first enable (needs a user gesture anyway).
   const ensureGraph = useCallback(() => {
     if (ctxRef.current || !available) return;
     const Ctor =
@@ -63,49 +72,47 @@ export function SceneAudioProvider({
       el.loop = true;
       el.preload = "auto";
       el.crossOrigin = "anonymous";
-      if (b.src) el.src = b.src;
-      else if (b.fallbackSrc) el.src = b.fallbackSrc;
-      const source = ctx.createMediaElementSource(el);
+      el.src = (b.src || b.fallbackSrc) as string;
       const gain = ctx.createGain();
       gain.gain.value = 0;
-      source.connect(gain).connect(ctx.destination);
-      void el.play().catch(() => {});
+      ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
       return { el, gain, bedGain: b.gain, range: b.range };
     });
   }, [available]);
 
-  const applyMix = useCallback(
-    (p: number) => {
-      const ctx = ctxRef.current;
-      if (!ctx) return;
-      for (const n of nodesRef.current) {
-        const [s, e] = n.range;
-        const mid = (s + e) / 2;
-        const half = Math.max((e - s) / 2, 0.0001);
-        // Triangular window: full at the bed's midpoint, 0 at its edges + a
-        // little beyond, so neighbours overlap into a crossfade.
-        const t = 1 - Math.min(Math.abs(p - mid) / (half * 1.6), 1);
-        const target = enabled ? t * n.bedGain : 0;
-        n.gain.gain.setTargetAtTime(target, ctx.currentTime, 0.25);
-      }
-    },
-    [enabled],
-  );
-
-  useMotionValueEvent(progress, "change", (p) => applyMix(p));
-
+  // Continuous mix — runs every frame while enabled so the score tracks scroll
+  // and never freezes when scrolling stops.
   useEffect(() => {
     if (!enabled) {
-      applyMix(progress.get());
+      const ctx = ctxRef.current;
+      nodesRef.current.forEach((n) => {
+        if (ctx) n.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.2);
+      });
+      cancelAnimationFrame(rafRef.current);
       return;
     }
+
     ensureGraph();
-    ctxRef.current?.resume().catch(() => {});
-    applyMix(progress.get());
-  }, [enabled, ensureGraph, applyMix, progress]);
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+    ctx.resume().catch(() => {});
+    nodesRef.current.forEach((n) => void n.el.play().catch(() => {}));
+
+    const loop = () => {
+      const p = progress.get();
+      for (const n of nodesRef.current) {
+        const lvl = windowLevel(p, n.range[0], n.range[1]);
+        n.gain.gain.setTargetAtTime(lvl * n.bedGain, ctx.currentTime, 0.12);
+      }
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [enabled, ensureGraph, progress]);
 
   useEffect(() => {
     return () => {
+      cancelAnimationFrame(rafRef.current);
       nodesRef.current.forEach((n) => {
         n.el.pause();
         n.el.src = "";

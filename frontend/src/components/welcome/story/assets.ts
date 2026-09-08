@@ -41,38 +41,19 @@ const beach = "linear-gradient(180deg,#5aa7e0,#bfe3ff 45%,#e8d6a8)";
 
 export const STORY_ASSETS = {
   // ── Part 1 — the problem ────────────────────────────────────────────────
-  problemComposite: {
-    src: assetUrl("problem-composite.webp"),
-    alt: "A man at a cluttered desk on a scorched hillside, phone in hand, the top of his head open with his brain in a microwave cabled to a nearby tree",
+  // Background is the generated clip, scrubbed by scroll (see PartProblem).
+  problemPoster: {
+    src: assetUrl("problem-poster.webp"),
+    alt: "A man sitting on a scorched hillside scrolling his phone",
     fallback: scorch,
   },
-  problemSky: {
-    src: assetUrl("problem-sky.webp"),
-    alt: "Harsh blown-out midday sun over a parched hill",
-    fallback: "radial-gradient(circle at 70% 20%,#fffdf0,#e7c94f 40%,#b7a24d)",
-  },
 
-  // ── Part 2 — the solution ───────────────────────────────────────────────
-  picnicScene: {
-    src: assetUrl("picnic-scene.webp"),
-    alt: "The same man working happily at a picnic table in a Swiss-style meadow, a cow peeking over his shoulder at his laptop",
+  // ── Part 2 — the solution (background is the transformation clip, scrubbed) ──
+  solutionPoster: {
+    src: assetUrl("solution-poster.webp"),
+    alt: "The same man working happily at a picnic table in a Swiss meadow, a cow peeking over his shoulder",
     fallback: bliss,
   },
-  streamLoopWebm: { src: assetUrl("stream-loop.webm"), alt: "Crystal-clear stream flowing", fallback: bliss },
-  streamLoopMp4: { src: assetUrl("stream-loop.mp4"), alt: "Crystal-clear stream flowing", fallback: bliss },
-  streamStill: { src: assetUrl("stream-still.webp"), alt: "Crystal-clear stream beside the meadow", fallback: bliss },
-  catCow: {
-    src: assetUrl("cat-cow.webp"),
-    alt: "The man doing a cat-cow yoga stretch on the grass while the cow grazes beside him",
-    fallback: bliss,
-  },
-  pushups: {
-    src: assetUrl("pushups.webp"),
-    alt: "The man doing push-ups on the grass, cow grazing next to him, stream running past",
-    fallback: bliss,
-  },
-  cloudA: { src: assetUrl("cloud-a.png"), alt: "", fallback: "radial-gradient(ellipse,#ffffff,rgba(255,255,255,0))" },
-  cloudB: { src: assetUrl("cloud-b.png"), alt: "", fallback: "radial-gradient(ellipse,#ffffff,rgba(255,255,255,0))" },
 
   // ── Part 3 — the features walk ──────────────────────────────────────────
   walkGround: { src: assetUrl("walk-ground.webp"), alt: "Continuous grassy path", fallback: "linear-gradient(180deg,#8fd0a6,#3ba85c)" },
@@ -106,3 +87,16 @@ export const STORY_ASSETS = {
 } satisfies Record<string, StoryAsset>;
 
 export type StoryAssetKey = keyof typeof STORY_ASSETS;
+
+/**
+ * Part 1's background clip (1152×648, ~15s, all-keyframe H.264 so `currentTime`
+ * seeks are instant) — scrubbed by scroll in `PartProblem`, never `.play()`ed.
+ * Plus the one-shot notification "ding" sliced from the clip audio, fired once
+ * when the scroll passes the app-open beat (sound-toggle gated).
+ */
+export const PROBLEM_VIDEO_MP4 = assetUrl("problem-scrub.mp4");
+export const PROBLEM_DING_OGG = assetUrl("problem-ding.ogg");
+export const PROBLEM_DING_MP3 = assetUrl("problem-ding.mp3");
+
+/** Part 2's background clip (transformation: Swiss work → workout), scrubbed. */
+export const SOLUTION_VIDEO_MP4 = assetUrl("solution-scrub.mp4");

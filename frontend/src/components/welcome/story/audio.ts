@@ -23,12 +23,17 @@ export interface AudioBed {
   gain: number;
 }
 
+// Ranges deliberately OVERLAP — SceneAudioProvider ramps each bed over a small
+// fade at its edges so neighbours crossfade and the score never has a gap.
 const BEDS: Omit<AudioBed, "src" | "fallbackSrc">[] = [
-  { id: "problem", range: [0.0, 0.28], mood: "tense, claustrophobic pad; degrades toward night", gain: 0.5 },
-  { id: "turn", range: [0.28, 0.34], mood: "short bright resolve stinger", gain: 0.6 },
-  { id: "solution", range: [0.34, 0.62], mood: "warm acoustic / folk, unhurried", gain: 0.55 },
-  { id: "payoff", range: [0.62, 0.74], mood: "uplifting swell, joyful", gain: 0.65 },
-  { id: "features", range: [0.74, 1.0], mood: "light walking-tempo groove", gain: 0.5 },
+  // Part 1: looping wind ambience from the clip (notification burst removed —
+  // the sharp ding is a separate scroll-synced one-shot in PartProblem).
+  { id: "problem", range: [0.0, 0.34], mood: "clip ambience — wind, low, airless", gain: 0.3 },
+  { id: "turn", range: [0.3, 0.42], mood: "short bright resolve stinger", gain: 0.55 },
+  // Part 2: looping ambience from the transformation clip (meadow, stream).
+  { id: "solution", range: [0.38, 0.62], mood: "clip ambience — meadow, stream, warm", gain: 0.42 },
+  { id: "payoff", range: [0.58, 0.72], mood: "uplifting swell, joyful", gain: 0.6 },
+  { id: "features", range: [0.7, 1.1], mood: "light walking-tempo groove", gain: 0.5 },
 ];
 
 export const AUDIO_BEDS: AudioBed[] = BEDS.map((b) => ({

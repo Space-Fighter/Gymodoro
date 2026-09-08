@@ -20,3 +20,6 @@ GYMODORO_DEMO_SCRIPT.md
 # OS files
 .DS_Store
 Thumbs.db
+# raw video working files (processed outputs live in assets/welcome/)
+frontend/src/assets/videos/
+frontend/_shoot.mjs
