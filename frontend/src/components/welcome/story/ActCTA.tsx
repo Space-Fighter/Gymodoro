@@ -8,10 +8,13 @@ import { GlassPanel } from "./motion";
 import { STORY_ASSETS } from "./assets";
 
 /**
- * Beat 12 — resolve & hold. The story ends on a real sign-in, not a fade.
- * Google mirrors SignIn.tsx (`useGoogleSignIn` + `googleLogin(idToken,
- * "signup")`); on success the <Welcome> auth guard re-renders and
- * <Navigate to="/"/> fires. Email routes to the existing pages.
+ * Beat 12 — resolve & hold. The story ends on a real sign-in, never a fade to
+ * nothing: a glass card holds over a calm `vanBeach` frame.
+ *
+ * Google mirrors `SignIn.tsx` — `useAuth().googleLogin` + `useGoogleSignIn`,
+ * called with mode "signup". On success we do nothing: the `<Welcome>` auth
+ * guard re-renders and `<Navigate to="/"/>` fires on its own. Email routes to
+ * the existing `/signup` and `/signin` pages.
  */
 export default function ActCTA() {
   const { googleLogin } = useAuth();
@@ -22,7 +25,7 @@ export default function ActCTA() {
       setErr(null);
       try {
         await googleLogin(idToken, "signup");
-        // guard in Welcome.tsx handles the redirect
+        // success: Welcome.tsx's guard redirects — nothing to do here.
       } catch (e) {
         setErr(e instanceof Error ? e.message : "Google sign-in failed");
       }
@@ -33,16 +36,29 @@ export default function ActCTA() {
   const { promptGoogleSignIn } = useGoogleSignIn(onCredential);
 
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
-      <ParallaxImage asset={STORY_ASSETS.vanBeach} position="center" />
+    <section
+      id="start"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden"
+    >
+      <ParallaxImage asset={STORY_ASSETS.vanBeach} position="center" priority />
+      {/* legibility scrim over the frame */}
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/35 to-black/55"
+      />
+
       <GlassPanel className="relative z-10 mx-6 w-full max-w-md p-8 text-center">
-        <h2 className="text-3xl font-extrabold text-white">Start your first cycle</h2>
-        <p className="mt-2 text-sm text-white/85">
+        <h2 className="font-heading text-3xl font-extrabold tracking-tight text-white">
+          Start your first cycle
+        </h2>
+        <p className="mt-2 text-sm font-medium tracking-wide text-white/85">
           GYMODORO — Work. Move. Repeat.
         </p>
 
         {err && (
-          <p className="mt-4 rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">{err}</p>
+          <p className="mt-4 rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">
+            {err}
+          </p>
         )}
 
         <button

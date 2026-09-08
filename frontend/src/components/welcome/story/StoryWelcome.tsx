@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { useScroll } from "framer-motion";
 import { StoryScrollProvider } from "./motion";
 import { SceneAudioProvider } from "./SceneAudioProvider";
+import SoundToggle from "./SoundToggle";
 import PartProblem from "./PartProblem";
 import PartSolution from "./PartSolution";
 import PartFeatures from "./PartFeatures";
@@ -26,6 +27,7 @@ export default function StoryWelcome() {
   return (
     <StoryScrollProvider progress={scrollYProgress}>
       <SceneAudioProvider progress={scrollYProgress}>
+        <SoundToggle />
         <div ref={containerRef} className="relative">
           <PartProblem />
           <PartSolution />
