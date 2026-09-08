@@ -1,20 +1,17 @@
-import { useEffect, useRef } from "react";
-import { motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
+import { useInView, useMotionValueEvent, useScroll } from "framer-motion";
 import { useCalm } from "./storyScroll";
-import { useSceneAudio } from "./sceneAudioContext";
 import ScrubVideo from "./ScrubVideo";
-import {
-  STORY_ASSETS,
-  PROBLEM_VIDEO_MP4,
-  PROBLEM_DING_OGG,
-  PROBLEM_DING_MP3,
-} from "./assets";
+import { useTrack, useSfx } from "./useStoryAudio";
+import { STORY_ASSETS, PROBLEM_VIDEO_MP4 } from "./assets";
+import { PART1_TRACK, PROBLEM_DING, DING_AT } from "./audio";
 
 /**
  * Part 1 — The Problem. The whole scene IS the generated clip, scrubbed by
- * scroll (cluttered hillside desk → phone → head-lid → microwave → the day
- * burning down). No HTML overlays, no tint — the clip carries the story. It
- * ends on a clip-path wipe that reveals Part 2 underneath.
+ * scroll (cluttered hillside desk → phone/apps → head-lid → microwave →
+ * nightfall → the eye). No HTML overlays. A tense music bed plays while it's on
+ * screen; the notification ding rings once as the scrub reaches the app-open
+ * moment (~12% in). Part 2 fades in over the top at the end (see PartSolution).
  */
 export default function PartProblem() {
   const ref = useRef<HTMLElement>(null);
@@ -24,46 +21,21 @@ export default function PartProblem() {
     offset: ["start start", "end end"],
   });
 
-  // The Turn — one continuous clip-path inset wipe revealing Part 2 underneath.
-  const wipe = useTransform(
-    scrollYProgress,
-    [0.9, 1],
-    ["inset(0 0 0 0)", "inset(0 0 100% 0)"],
-  );
+  const inView = useInView(ref, { amount: 0.2 });
+  useTrack(PART1_TRACK, inView, { volume: 0.6 });
 
-  // Notification "ding" sliced from the clip audio — one-shot at the app-open
-  // beat, only when the visitor has enabled sound. Re-arms above the beat.
-  const { enabled: soundOn } = useSceneAudio();
-  const dingRef = useRef<HTMLAudioElement | null>(null);
-  const dingArmed = useRef(true);
-  useEffect(() => {
-    const a = new Audio();
-    a.preload = "auto";
-    if (a.canPlayType("audio/ogg") && PROBLEM_DING_OGG) a.src = PROBLEM_DING_OGG;
-    else if (PROBLEM_DING_MP3) a.src = PROBLEM_DING_MP3;
-    a.volume = 0.7;
-    dingRef.current = a;
-    return () => {
-      a.pause();
-      dingRef.current = null;
-    };
-  }, []);
+  const ding = useSfx(PROBLEM_DING, { volume: 0.85 });
+  const armed = useRef(true);
   useMotionValueEvent(scrollYProgress, "change", (p) => {
-    if (p < 0.28) dingArmed.current = true;
-    if (p >= 0.36 && dingArmed.current && soundOn && dingRef.current) {
-      dingArmed.current = false;
-      dingRef.current.currentTime = 0;
-      void dingRef.current.play().catch(() => {});
+    if (p < DING_AT - 0.06) armed.current = true;
+    if (p >= DING_AT && armed.current) {
+      armed.current = false;
+      ding();
     }
   });
 
   return (
-    <motion.section
-      ref={ref}
-      id="problem"
-      className="relative h-[600vh]"
-      style={{ clipPath: wipe }}
-    >
+    <section ref={ref} id="problem" className="relative h-[600vh]">
       <div className="sticky top-0 h-screen w-full overflow-hidden bg-[#0b1020]">
         <ScrubVideo
           progress={scrollYProgress}
@@ -73,6 +45,6 @@ export default function PartProblem() {
           alt={STORY_ASSETS.problemPoster.alt}
         />
       </div>
-    </motion.section>
+    </section>
   );
 }

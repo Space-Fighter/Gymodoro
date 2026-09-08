@@ -26,9 +26,9 @@ export default function StoryWelcome() {
 
   return (
     <StoryScrollProvider progress={scrollYProgress}>
-      <SceneAudioProvider progress={scrollYProgress}>
+      <SceneAudioProvider>
         <SoundToggle />
-        <div ref={containerRef} className="relative">
+        <div ref={containerRef} className="relative bg-[#0b1020]">
           <PartProblem />
           <PartSolution />
           <PartFeatures />
