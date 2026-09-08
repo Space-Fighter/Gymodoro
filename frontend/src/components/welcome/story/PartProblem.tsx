@@ -65,12 +65,21 @@ function Beat({
   className?: string;
   children: ReactNode;
 }) {
+  // Fade window kept strictly inside [0,1] and strictly increasing — framer's
+  // interpolate() (and the WAAPI path it can hand off to) rejects ranges that
+  // dip below 0, exceed 1, or repeat a value.
+  const pad = 0.03;
+  const a = Math.max(0, enter - pad);
+  const b = Math.max(a + 0.001, enter);
+  const c = Math.max(b + 0.001, exit);
+  const d = Math.min(1, Math.max(c + 0.001, exit + pad));
   const opacity = useTransform(
     progress,
-    [enter - 0.03, enter, exit, exit + 0.03],
+    [a, b, c, d],
     hold ? [0, 1, 1, 1] : [0, 1, 1, 0],
   );
-  const ty = useTransform(progress, [enter, exit], calm ? [0, 0] : [y, -y]);
+  const eStart = Math.min(enter, exit - 0.001);
+  const ty = useTransform(progress, [eStart, exit], calm ? [0, 0] : [y, -y]);
   return (
     <motion.div style={{ opacity, y: ty }} className={className}>
       {children}
