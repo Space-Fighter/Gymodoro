@@ -11,10 +11,10 @@ import { SceneAudioContext, type SceneAudio } from "./sceneAudioContext";
 
 /**
  * Owns the shared AudioContext + master gain and the on/off state for all
- * Welcome-story sound. Sound turns ON automatically on the visitor's first real
- * gesture (pointer/key) — unless they've explicitly muted it before — and the
- * top-right toggle flips it either way. Each Part pulls the context off
- * `useSceneAudio()` and plays its own track (see `useStoryAudio`).
+ * Welcome-story sound. Sound is "on" by default (unless the visitor muted it
+ * before); the context is unlocked and started on their first real gesture
+ * (browsers require one). `unlocked` bumps then, which re-runs every track's
+ * play effect so playback actually starts. The top-right toggle also unlocks.
  */
 
 const available = Boolean(PART1_TRACK.ogg || PART1_TRACK.mp3 || PART2_TRACK.ogg || PART2_TRACK.mp3);
@@ -29,8 +29,8 @@ function readPref(): "on" | "off" | null {
 }
 
 export function SceneAudioProvider({ children }: { children: ReactNode }) {
-  // Start enabled unless the visitor has explicitly turned it off before.
   const [enabled, setEnabled] = useState(() => readPref() !== "off");
+  const [unlocked, setUnlocked] = useState(0);
 
   const ctxRef = useRef<AudioContext | null>(null);
   const masterRef = useRef<GainNode | null>(null);
@@ -50,40 +50,40 @@ export function SceneAudioProvider({ children }: { children: ReactNode }) {
     return ctx;
   }, []);
 
-  // Resume/suspend the context as `enabled` changes.
+  const unlock = useCallback(() => {
+    const ctx = ensureCtx();
+    ctx?.resume().catch(() => {});
+    setUnlocked((n) => n + 1);
+  }, [ensureCtx]);
+
   useEffect(() => {
     const ctx = ctxRef.current;
     if (!ctx) return;
     if (enabled) ctx.resume().catch(() => {});
     else ctx.suspend().catch(() => {});
-  }, [enabled]);
+  }, [enabled, unlocked]);
 
-  // Auto-enable on the first real user gesture (needed to start the context).
+  // First real gesture unlocks + starts the context.
   useEffect(() => {
-    if (readPref() === "off") return;
     const kick = () => {
-      ensureCtx();
-      ctxRef.current?.resume().catch(() => {});
-      setEnabled((v) => v || readPref() !== "off");
+      unlock();
       window.removeEventListener("pointerdown", kick);
       window.removeEventListener("keydown", kick);
       window.removeEventListener("touchstart", kick);
     };
-    window.addEventListener("pointerdown", kick, { once: false });
-    window.addEventListener("keydown", kick, { once: false });
-    window.addEventListener("touchstart", kick, { once: false });
+    window.addEventListener("pointerdown", kick);
+    window.addEventListener("keydown", kick);
+    window.addEventListener("touchstart", kick);
     return () => {
       window.removeEventListener("pointerdown", kick);
       window.removeEventListener("keydown", kick);
       window.removeEventListener("touchstart", kick);
     };
-  }, [ensureCtx]);
+  }, [unlock]);
 
-  useEffect(() => {
-    return () => {
-      ctxRef.current?.close().catch(() => {});
-    };
-  }, []);
+  // Note: the AudioContext is intentionally NOT closed on unmount — React
+  // StrictMode double-invokes effects in dev, and closing it there leaves a
+  // dead context behind. It lives for the page and the browser reclaims it.
 
   const toggle = useCallback(() => {
     setEnabled((v) => {
@@ -93,23 +93,21 @@ export function SceneAudioProvider({ children }: { children: ReactNode }) {
       } catch {
         /* ignore */
       }
-      if (next) {
-        ensureCtx();
-        ctxRef.current?.resume().catch(() => {});
-      }
+      if (next) unlock();
       return next;
     });
-  }, [ensureCtx]);
+  }, [unlock]);
 
   const value = useMemo<SceneAudio>(
     () => ({
       enabled,
+      unlocked,
       toggle,
       available,
       getContext: () => ensureCtx(),
       getMaster: () => masterRef.current,
     }),
-    [enabled, toggle, ensureCtx],
+    [enabled, unlocked, toggle, ensureCtx],
   );
 
   return (

@@ -12,7 +12,7 @@ export function useTrack(
   active: boolean,
   { volume = 0.7 }: { volume?: number } = {},
 ) {
-  const { enabled, getContext, getMaster } = useSceneAudio();
+  const { enabled, unlocked, getContext, getMaster } = useSceneAudio();
   const elRef = useRef<HTMLAudioElement | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const wiredRef = useRef(false);
@@ -44,8 +44,11 @@ export function useTrack(
     if (!ctx || !el || !gain) return;
 
     if (on) {
-      ctx.resume().catch(() => {});
-      void el.play().catch(() => {});
+      ctx.resume().then(() => {
+        void el.play().catch(() => {});
+      }).catch(() => {
+        void el.play().catch(() => {});
+      });
       gain.gain.cancelScheduledValues(ctx.currentTime);
       gain.gain.setTargetAtTime(volume, ctx.currentTime, 0.6);
     } else {
@@ -54,12 +57,16 @@ export function useTrack(
       const t = window.setTimeout(() => el.pause(), 1400);
       return () => window.clearTimeout(t);
     }
-  }, [active, enabled, volume, wire, getContext]);
+  }, [active, enabled, unlocked, volume, wire, getContext]);
 
   useEffect(() => {
     return () => {
+      // StrictMode double-invokes this in dev — tear the graph down fully so the
+      // remount rebuilds it (don't just clear src on a ref we then reuse).
       elRef.current?.pause();
-      if (elRef.current) elRef.current.src = "";
+      elRef.current = null;
+      gainRef.current = null;
+      wiredRef.current = false;
     };
   }, []);
 }
@@ -69,7 +76,7 @@ export function useTrack(
  * fires it once through the master gain, no-op until sound is enabled.
  */
 export function useSfx(track: { ogg?: string; mp3?: string }, { volume = 0.8 } = {}) {
-  const { enabled, getContext, getMaster } = useSceneAudio();
+  const { enabled, unlocked, getContext, getMaster } = useSceneAudio();
   const bufRef = useRef<AudioBuffer | null>(null);
   const loadingRef = useRef(false);
 
@@ -89,7 +96,7 @@ export function useSfx(track: { ogg?: string; mp3?: string }, { volume = 0.8 } =
       .finally(() => {
         loadingRef.current = false;
       });
-  }, [track, getContext, enabled]);
+  }, [track, getContext, unlocked]);
 
   return useCallback(() => {
     if (!enabled) return;

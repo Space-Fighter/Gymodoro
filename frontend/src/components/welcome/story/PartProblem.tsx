@@ -21,7 +21,9 @@ export default function PartProblem() {
     offset: ["start start", "end end"],
   });
 
-  const inView = useInView(ref, { amount: 0.2 });
+  // "some" = any part of the (very tall) section intersects the viewport. An
+  // `amount` fraction can never be satisfied by a 600vh element.
+  const inView = useInView(ref, { amount: "some" });
   useTrack(PART1_TRACK, inView, { volume: 0.6 });
 
   const ding = useSfx(PROBLEM_DING, { volume: 0.85 });
@@ -36,7 +38,7 @@ export default function PartProblem() {
 
   return (
     <section ref={ref} id="problem" className="relative h-[600vh]">
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-[#0b1020]">
+      <div className="sticky top-0 h-screen w-full overflow-hidden">
         <ScrubVideo
           progress={scrollYProgress}
           calm={calm}

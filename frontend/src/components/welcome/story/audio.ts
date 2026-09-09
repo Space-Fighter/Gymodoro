@@ -14,7 +14,7 @@ export const PART2_TRACK = { ogg: assetUrl("audio/part2.ogg"), mp3: assetUrl("au
 export const PROBLEM_DING = { ogg: assetUrl("problem-ding.ogg"), mp3: assetUrl("problem-ding.mp3") };
 
 /** Scroll-progress point (within Part 1) where the phone app pops on screen. */
-export const DING_AT = 0.12;
+export const DING_AT = 0.17;
 
 export const SOUND_PREF_KEY = "gymodoro-welcome-sound";
 
