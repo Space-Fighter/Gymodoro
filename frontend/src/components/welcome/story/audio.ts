@@ -6,10 +6,11 @@ import { assetUrl } from "./assets";
  * footage. Everything is gated by the sound toggle.
  *
  * Music: Kevin MacLeod (incompetech.com), CC BY 4.0 — see CREDITS.md.
- *   Part 1 "Anxiety"  · Part 2 "Inspired"
+ *   Part 1 "Anxiety"  · Part 2 "Inspired"  · Part 3 "Cheery Monday"
  */
 export const PART1_TRACK = { ogg: assetUrl("audio/part1.ogg"), mp3: assetUrl("audio/part1.mp3") };
 export const PART2_TRACK = { ogg: assetUrl("audio/part2.ogg"), mp3: assetUrl("audio/part2.mp3") };
+export const PART3_TRACK = { ogg: assetUrl("audio/part3.ogg"), mp3: assetUrl("audio/part3.mp3") };
 
 export const PROBLEM_DING = { ogg: assetUrl("problem-ding.ogg"), mp3: assetUrl("problem-ding.mp3") };
 

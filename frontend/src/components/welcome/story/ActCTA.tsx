@@ -3,13 +3,12 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
 import GoogleIcon from "@/components/GoogleIcon";
-import ParallaxImage from "./ParallaxImage";
 import { GlassPanel } from "./motion";
 import { STORY_ASSETS } from "./assets";
 
 /**
- * Beat 12 — resolve & hold. The story ends on a real sign-in, never a fade to
- * nothing: a glass card holds over a calm `vanBeach` frame.
+ * Resolve & hold. The story ends on a real sign-in, never a fade to nothing: a
+ * glass card holds over the last frame of Part 2's clip (the beach payoff).
  *
  * Google mirrors `SignIn.tsx` — `useAuth().googleLogin` + `useGoogleSignIn`,
  * called with mode "signup". On success we do nothing: the `<Welcome>` auth
@@ -40,7 +39,12 @@ export default function ActCTA() {
       id="start"
       className="relative flex min-h-screen items-center justify-center overflow-hidden"
     >
-      <ParallaxImage asset={STORY_ASSETS.vanBeach} position="center" priority />
+      <img
+        src={STORY_ASSETS.ctaBg.src}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover"
+        style={{ background: STORY_ASSETS.ctaBg.fallback }}
+      />
       {/* legibility scrim over the frame */}
       <div
         aria-hidden
