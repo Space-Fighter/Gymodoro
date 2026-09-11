@@ -6,7 +6,7 @@
 
 const FILES = import.meta.glob(
   [
-    "../../../assets/welcome/**/*.{webp,png,jpg,jpeg,avif,mp4,webm,ogg,mp3}",
+    "../../../assets/welcome/**/*.{webp,png,jpg,jpeg,avif,mp4,webm}",
     "!../../../assets/welcome/character-ref.png",
   ],
   { eager: true, query: "?url", import: "default" },
@@ -65,7 +65,3 @@ export type StoryAssetKey = keyof typeof STORY_ASSETS;
 export const PROBLEM_VIDEO_MP4 = assetUrl("problem-scrub.mp4");
 export const SOLUTION_VIDEO_MP4 = assetUrl("solution-scrub.mp4");
 export const FEATURES_VIDEO_MP4 = assetUrl("features-scrub.mp4");
-
-/** One-shot notification "ding" (sliced from the Part 1 clip audio). */
-export const PROBLEM_DING_OGG = assetUrl("problem-ding.ogg");
-export const PROBLEM_DING_MP3 = assetUrl("problem-ding.mp3");

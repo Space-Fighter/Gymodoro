@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useMotionValueEvent, type MotionValue } from "framer-motion";
+import { motion, useMotionValueEvent, useTransform, type MotionValue } from "framer-motion";
 
 /**
  * A clip whose playhead is driven by scroll. The <video> is never played — it
@@ -8,6 +8,10 @@ import { useMotionValueEvent, type MotionValue } from "framer-motion";
  * transports the footage frame-by-frame. The source must be encoded with a
  * short keyframe interval so seeks are cheap. Under reduced motion we hold the
  * poster still instead.
+ *
+ * On top of the time-scrub, the frame also drifts horizontally with scroll
+ * (a slight overscan pans left→right) so the section reads as a horizontal
+ * camera move rather than a static crop. Disable with `pan={false}`.
  */
 export default function ScrubVideo({
   progress,
@@ -16,6 +20,7 @@ export default function ScrubVideo({
   poster,
   alt = "",
   className = "h-full w-full object-cover",
+  pan = true,
 }: {
   progress: MotionValue<number>;
   calm: boolean;
@@ -23,6 +28,7 @@ export default function ScrubVideo({
   poster?: string;
   alt?: string;
   className?: string;
+  pan?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const target = useRef(0);
@@ -56,18 +62,30 @@ export default function ScrubVideo({
     target.current = p < 0 ? 0 : p > 1 ? 1 : p;
   });
 
-  if (calm || !src) {
-    return <img src={poster} alt={alt} className={className} />;
-  }
+  // 5% overscan either side; x ranges within it so the pan never shows an edge.
+  const x = useTransform(progress, [0, 1], ["4%", "-4%"]);
+
+  const frame = calm || !src
+    ? <img src={poster} alt={alt} className={className} />
+    : (
+      <video
+        ref={videoRef}
+        src={src}
+        poster={poster}
+        muted
+        playsInline
+        preload="auto"
+        className={className}
+      />
+    );
+
+  if (!pan || calm) return frame;
+
   return (
-    <video
-      ref={videoRef}
-      src={src}
-      poster={poster}
-      muted
-      playsInline
-      preload="auto"
-      className={className}
-    />
+    <div className="h-full w-full overflow-hidden">
+      <motion.div style={{ x }} className="-ml-[5%] h-full w-[110%]">
+        {frame}
+      </motion.div>
+    </div>
   );
 }

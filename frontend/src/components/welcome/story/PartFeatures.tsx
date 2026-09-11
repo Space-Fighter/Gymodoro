@@ -1,16 +1,14 @@
 import { useRef } from "react";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useCalm } from "./storyScroll";
 import ScrubVideo from "./ScrubVideo";
-import { useTrack } from "./useStoryAudio";
 import { STORY_ASSETS, FEATURES_VIDEO_MP4 } from "./assets";
-import { PART3_TRACK } from "./audio";
 
 /**
  * Part 3 — A day with the app. Same treatment as Parts 1 & 2: the scene is a
- * scroll-scrubbed clip (the guy walking his dog, using Gymodoro through the day),
- * with an upbeat music bed. Falls back to the poster still until
- * `features-scrub.mp4` is dropped in. Cross-dissolves in over Part 2's end.
+ * scroll-scrubbed clip (the guy walking his dog, using Gymodoro through the day).
+ * Falls back to the poster still until `features-scrub.mp4` is dropped in.
+ * Cross-dissolves in over Part 2's end.
  */
 export default function PartFeatures() {
   const ref = useRef<HTMLElement>(null);
@@ -19,9 +17,6 @@ export default function PartFeatures() {
     target: ref,
     offset: ["start start", "end end"],
   });
-
-  const inView = useInView(ref, { amount: "some" });
-  useTrack(PART3_TRACK, inView, { volume: 0.6 });
 
   const fadeIn = useTransform(scrollYProgress, [0, 0.14], [0, 1]);
 

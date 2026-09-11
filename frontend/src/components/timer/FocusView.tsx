@@ -1,4 +1,4 @@
-import { RotateCcw, Play, Pause, PictureInPicture2 } from "lucide-react";
+import { RotateCcw, Play, Pause, PictureInPicture2, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Mode {
@@ -17,6 +17,7 @@ interface Props {
   onToggleStart: () => void;
   onReset: () => void;
   onAddTime: (minutes: number) => void;
+  onFinish: () => void;
   onPopOut?: () => void;
   contentLeft: string;
 }
@@ -31,6 +32,7 @@ export default function FocusView({
   onToggleStart,
   onReset,
   onAddTime,
+  onFinish,
   onPopOut,
   contentLeft,
 }: Props) {
@@ -120,6 +122,19 @@ export default function FocusView({
           )}
         >
           <PictureInPicture2 size={18} className="stroke-2" />
+        </button>
+
+        <button
+          onClick={onFinish}
+          aria-label="Finish now"
+          title="Finish now"
+          className={cn(
+            "w-12 h-12 rounded-full border border-white/25 bg-white/6",
+            "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
+            "hover:bg-white/12 transition-colors"
+          )}
+        >
+          <ChevronRight size={22} className="stroke-2" />
         </button>
       </div>
 

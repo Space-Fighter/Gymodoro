@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { RotateCcw, Pause, Play, Dice6, PictureInPicture2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { RotateCcw, Pause, Play, Dice6, PictureInPicture2, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ExerciseType } from "@/types/exercise";
 import GifLoop from "@/components/timer/GifLoop";
@@ -56,6 +56,7 @@ interface Props {
   onSwitchMode: (mode: "focus" | "short" | "long") => void;
   onToggleStart: () => void;
   onReset: () => void;
+  onFinish: () => void;
   onPopOut?: () => void;
   contentLeft: string;
   activity: ExerciseType | null;
@@ -74,6 +75,7 @@ export default function BreakView({
   onSwitchMode,
   onToggleStart,
   onReset,
+  onFinish,
   onPopOut,
   contentLeft,
   activity,
@@ -84,6 +86,63 @@ export default function BreakView({
 }: Props) {
   const [muscleDiagramOpen, setMuscleDiagramOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(true);
+
+  // Mirrors the GIF box's actual rendered height onto the video box so the
+  // two match exactly. flex-1 alone doesn't do this: the two columns carry
+  // different amounts of surrounding content (tags/dropdowns/timer controls
+  // on the right vs. just the activity buttons on the left), so they end up
+  // with different leftover space. This only reads the GIF box's size via a
+  // ref — GifLoop itself and its container are untouched.
+  //
+  // A callback ref (state, not useRef) is required here: the GIF box only
+  // exists in the DOM once `activity` has loaded, so a plain useRef+useEffect
+  // with `[]` deps would run before that div ever mounts, see gifBoxEl stay
+  // null forever, and never attach the observer. Using state for the node
+  // means this effect re-runs the moment the div actually appears.
+  const [gifBoxEl, setGifBoxEl] = useState<HTMLDivElement | null>(null);
+  const [gifBoxHeight, setGifBoxHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!gifBoxEl) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setGifBoxHeight(entry.contentRect.height);
+    });
+    observer.observe(gifBoxEl);
+    return () => observer.disconnect();
+  }, [gifBoxEl]);
+
+  // The timer block (digits + controls) below the video needs to visibly
+  // shrink on a shorter/laptop screen so the video — which already claims
+  // "whatever's left" via flex-1 — gets first claim on the right column's
+  // space instead of being squeezed to a sliver by a timer block sized for
+  // a tall monitor. A fixed rem/vh size can't know that; this measures the
+  // column's actual rendered height and scales the timer down from it
+  // directly, the same ref-based approach as the GIF/video height match.
+  const [rightColEl, setRightColEl] = useState<HTMLDivElement | null>(null);
+  const [rightColHeight, setRightColHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!rightColEl) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setRightColHeight(entry.contentRect.height);
+    });
+    observer.observe(rightColEl);
+    return () => observer.disconnect();
+  }, [rightColEl]);
+
+  // 9% of the column's height, floored/ceilinged to stay legible on very
+  // short or very tall screens; description-open shrinks it further so it
+  // never overlaps the content above (same intent as the old fixed clamp()).
+  const timerFontPx =
+    rightColHeight !== null
+      ? Math.max(22, Math.min(72, rightColHeight * 0.09)) * (descriptionOpen ? 0.65 : 1)
+      : null;
+  // Controls (Reset/Start/PopOut/Finish) scale down together with the
+  // digits — at 72px (the ceiling) they're full size; below that they scale
+  // proportionally so a shrunk timer doesn't end up with oversized buttons.
+  const timerScale = timerFontPx !== null ? Math.max(0.55, Math.min(1, timerFontPx / 72)) : 1;
+  const controlBtnPx = Math.round(48 * timerScale);
+  const controlIconPx = Math.round(18 * timerScale);
 
   return (
     <div
@@ -136,7 +195,10 @@ export default function BreakView({
                 {activity.name}
               </div>
 
-              <div className="w-full flex-1 min-h-0 rounded-lg overflow-hidden bg-black border border-white/10">
+              <div
+                ref={setGifBoxEl}
+                className="w-full flex-1 min-h-0 rounded-lg overflow-hidden bg-black border border-white/10"
+              >
                 {activity.gifUrl ? (
                   <GifLoop gifUrl={activity.gifUrl} className="w-full h-full" />
                 ) : (
@@ -169,7 +231,7 @@ export default function BreakView({
         </div>
 
         {/* Right: Timer and Video */}
-        <div className="flex flex-col gap-4 overflow-y-auto pl-4">
+        <div ref={setRightColEl} className="flex flex-col gap-4 overflow-y-auto pl-4">
           {activity && (
             <>
               <TagList exercise={activity} />
@@ -180,7 +242,10 @@ export default function BreakView({
                 onToggle={() => setVideoOpen((o) => !o)}
               />
               {videoOpen && (
-                <div className="rounded-lg overflow-hidden aspect-video bg-black border border-white/10">
+                <div
+                  className="w-full flex-1 min-h-0 rounded-lg overflow-hidden bg-black border border-white/10"
+                  style={gifBoxHeight !== null ? { maxHeight: gifBoxHeight } : undefined}
+                >
                   {activity.videoUrl ? (
                     <iframe
                       width="100%"
@@ -222,16 +287,22 @@ export default function BreakView({
           )}
 
           {/* Timer — shrinks when the description panel is open so it can
-              never be pushed into overlapping the content above it. */}
-          <div
-            className={cn(
-              "flex flex-col items-center gap-4 mt-auto shrink-0 rounded-3xl px-8 py-6 transition-[margin]",
-              descriptionOpen ? "mb-6" : "mb-12"
-            )}
-          >
+              never be pushed into overlapping the content above it. Font
+              size is driven by timerFontPx (measured off the actual column
+              height, see its declaration above) rather than a fixed rem or
+              vh guess, so the video above always gets first claim on the
+              column's space and the timer visibly gives way on a
+              shorter/laptop screen instead of crowding it out. mt-auto (no
+              fixed mb-*) claims 100% of whatever's left below the content
+              above, instead of stranding a constant chunk of it as dead
+              space regardless of how much room actually remains. Buttons
+              scale with controlBtnPx/controlIconPx so they shrink together
+              with the digits rather than staying full-size next to a
+              shrunk clock. */}
+          <div className="flex flex-col items-center gap-3 mt-auto shrink-0 rounded-3xl px-8 py-4">
             <div
               className="font-bold text-white font-poppins drop-shadow-lg transition-[font-size]"
-              style={{ fontSize: descriptionOpen ? "3rem" : "4.5rem" }}
+              style={{ fontSize: timerFontPx !== null ? `${timerFontPx}px` : "4.5rem" }}
             >
               {formatTime(remaining)}
             </div>
@@ -241,19 +312,25 @@ export default function BreakView({
                 onClick={onReset}
                 aria-label="Reset"
                 className={cn(
-                  "w-12 h-12 rounded-full border border-white/25 bg-white/6",
+                  "rounded-full border border-white/25 bg-white/6",
                   "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
                   "hover:bg-white/12 transition-colors"
                 )}
+                style={{ width: controlBtnPx, height: controlBtnPx }}
               >
-                <RotateCcw size={18} className="stroke-2" />
+                <RotateCcw size={controlIconPx} className="stroke-2" />
               </button>
 
               <button
                 onClick={onToggleStart}
-                className="px-9 py-3 rounded-full border-none bg-white text-black font-bold cursor-pointer font-poppins hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
+                className="rounded-full border-none bg-white text-black font-bold cursor-pointer font-poppins hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
+                style={{
+                  paddingInline: Math.round(36 * timerScale),
+                  paddingBlock: Math.round(12 * timerScale),
+                  fontSize: Math.round(16 * timerScale),
+                }}
               >
-                {running ? <Pause size={18} /> : <Play size={18} />}
+                {running ? <Pause size={controlIconPx} /> : <Play size={controlIconPx} />}
                 {running ? "Pause" : "Start"}
               </button>
 
@@ -262,12 +339,27 @@ export default function BreakView({
                 aria-label="Pop out timer"
                 title="Pop out timer"
                 className={cn(
-                  "w-12 h-12 rounded-full border border-white/25 bg-white/6",
+                  "rounded-full border border-white/25 bg-white/6",
                   "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
                   "hover:bg-white/12 transition-colors"
                 )}
+                style={{ width: controlBtnPx, height: controlBtnPx }}
               >
-                <PictureInPicture2 size={18} className="stroke-2" />
+                <PictureInPicture2 size={controlIconPx} className="stroke-2" />
+              </button>
+
+              <button
+                onClick={onFinish}
+                aria-label="Finish now"
+                title="Finish now"
+                className={cn(
+                  "rounded-full border border-white/25 bg-white/6",
+                  "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
+                  "hover:bg-white/12 transition-colors"
+                )}
+                style={{ width: controlBtnPx, height: controlBtnPx }}
+              >
+                <ChevronRight size={controlIconPx + 2} className="stroke-2" />
               </button>
             </div>
           </div>

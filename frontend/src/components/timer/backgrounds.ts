@@ -87,7 +87,7 @@ export const backgrounds: Background[] = [
   },
 ];
 
-export const DEFAULT_BACKGROUND_ID = "forest";
+export const DEFAULT_BACKGROUND_ID = "porsches-covered-bridge";
 
 export function getBackgroundById(id: string): Background {
   const preset = backgrounds.find((bg) => bg.id === id);

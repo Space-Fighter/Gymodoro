@@ -33,9 +33,12 @@ function getAudioContext(): AudioContext | null {
 
 const NOTE_DURATION = 0.18;
 const NOTE_GAP = 0.14;
-// One "ring" is the two-note chime; alarm repeats fire one ring per cycle.
-const ALARM_RING_INTERVAL = 1.5;
-const ALARM_DURATION_SECONDS = 30;
+const ALARM_DURATION_SECONDS = 15;
+// Old-style mechanical alarm clock: a clapper trilling rapidly back and
+// forth between two closely-pitched bells, continuously — not spaced-out
+// beeps (which read as a reversing-vehicle horn).
+const BELL_PULSE_INTERVAL = 0.09;
+const BELL_NOTE_DURATION = 0.075;
 
 /**
  * Schedules one two-tone chime ring on `ctx`'s clock starting at `start`
@@ -103,31 +106,49 @@ export function playChime(rising: boolean): void {
 }
 
 /**
- * Schedules a repeating "alarm" — the two-tone chime ringing every
- * {@link ALARM_RING_INTERVAL}s for `durationSeconds` (default 30s) starting
- * `delaySeconds` from now — for when a timer phase ends and should keep
- * ringing until the user comes back and starts the next phase, not just
- * chime once and go silent. All rings are pre-scheduled on the audio clock
- * up front (same background-tab-safe reasoning as {@link scheduleChime}).
- * Returns a function that stops every not-yet-finished ring, or null if
- * nothing was scheduled.
+ * Schedules the end-of-phase alarm: a continuous rapid trill between two
+ * bell tones — the clapper-between-two-bells sound of an old wind-up alarm
+ * clock — for `durationSeconds` (default 15s) starting `delaySeconds` from
+ * now. This is deliberately distinct from the "Sound effects" setting
+ * ({@link getSoundEffectsEnabled}), which is for optional decorative sounds
+ * (e.g. a countdown tick) — the alarm itself is core functionality (you'd
+ * otherwise have no idea a focus/break period ended) and always rings. All
+ * pulses are pre-scheduled on the audio clock up front (same background-tab
+ * -safe reasoning as {@link scheduleChime}). Returns a function that stops
+ * every not-yet-finished pulse, or null if audio is unavailable.
  */
 export function scheduleAlarmChime(
   rising: boolean,
   delaySeconds = 0,
   durationSeconds = ALARM_DURATION_SECONDS
 ): (() => void) | null {
-  if (!getSoundEffectsEnabled()) return null;
   const ctx = getAudioContext();
   if (!ctx) return null;
   if (ctx.state === "suspended") ctx.resume().catch(() => {});
 
   const base = ctx.currentTime + Math.max(0, delaySeconds);
-  const ringCount = Math.max(1, Math.ceil(durationSeconds / ALARM_RING_INTERVAL));
   const oscs: OscillatorNode[] = [];
 
-  for (let i = 0; i < ringCount; i++) {
-    oscs.push(...scheduleRing(ctx, rising, base + i * ALARM_RING_INTERVAL));
+  // Two closely-pitched bell tones the clapper alternates between; rising
+  // (focus ending) pitched a bit higher than falling (break ending).
+  const freqA = rising ? 1500 : 1200;
+  const freqB = rising ? 1800 : 1450;
+  const pulseCount = Math.max(1, Math.ceil(durationSeconds / BELL_PULSE_INTERVAL));
+
+  for (let i = 0; i < pulseCount; i++) {
+    const noteStart = base + i * BELL_PULSE_INTERVAL;
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.value = i % 2 === 0 ? freqA : freqB;
+    gainNode.gain.setValueAtTime(0, noteStart);
+    gainNode.gain.linearRampToValueAtTime(0.16, noteStart + 0.006);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, noteStart + BELL_NOTE_DURATION);
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    osc.start(noteStart);
+    osc.stop(noteStart + BELL_NOTE_DURATION + 0.01);
+    oscs.push(osc);
   }
 
   return () => cancelOscillators(oscs);

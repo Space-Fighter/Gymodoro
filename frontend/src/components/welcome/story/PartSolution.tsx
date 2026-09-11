@@ -1,15 +1,13 @@
 import { useRef } from "react";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useCalm } from "./storyScroll";
 import ScrubVideo from "./ScrubVideo";
-import { useTrack } from "./useStoryAudio";
 import { STORY_ASSETS, SOLUTION_VIDEO_MP4 } from "./assets";
-import { PART2_TRACK } from "./audio";
 
 /**
  * Part 2 — The Solution. The whole scene IS the transformation clip, scrubbed by
  * scroll (Swiss picnic work with the cow → shirtless workout → beach payoff). No
- * overlays. An uplifting music bed plays while it's on screen.
+ * overlays.
  *
  * Seam: this section is pulled up ~80vh over the end of Part 1 and its sticky
  * child fades in over that overlap, so Part 2 cross-dissolves over Part 1's last
@@ -22,9 +20,6 @@ export default function PartSolution() {
     target: ref,
     offset: ["start start", "end end"],
   });
-
-  const inView = useInView(ref, { amount: "some" });
-  useTrack(PART2_TRACK, inView, { volume: 0.7 });
 
   // Cross-dissolve Part 2's footage in over Part 1's last frame (the section is
   // pulled up so this overlap sits on top of Part 1's end). No background layer —
