@@ -140,61 +140,6 @@
   }
 }
 
-/* ── Welcome story page — committed bright "XP Bliss" daylight look ──────────
-   Scoped to .welcome-daylight so it overrides the app's dark theme tokens only
-   inside the /welcome subtree. The rest of the app is untouched. */
-.welcome-daylight {
-  --background: #bfe3ff;
-  --foreground: #0f2233;
-  --card: #ffffff;
-  --card-foreground: #0f2233;
-  --border: rgba(255, 255, 255, 0.5);
-  --muted-foreground: #40566b;
-  --primary: #22c55e;
-  --primary-foreground: #ffffff;
-
-  /* scene palette */
-  --sky-top: #4a8fd6;
-  --sky-bottom: #bfe3ff;
-  --grass: #4be277;
-  --grass-deep: #2f9e52;
-  --sun: #ffe08a;
-  --sun-hot: #fffdf0;
-  --scorch: #b7a24d;
-
-  color: var(--foreground);
-  background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
-}
-
-.welcome-daylight h1,
-.welcome-daylight h2,
-.welcome-daylight h3 {
-  color: #fff;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.35);
-}
-
-@keyframes cloud-drift {
-  from { transform: translate3d(-12%, 0, 0); }
-  to   { transform: translate3d(112%, 0, 0); }
-}
-@keyframes grass-sway {
-  0%, 100% { transform: skewX(-1.2deg); }
-  50%      { transform: skewX(1.2deg); }
-}
-@keyframes water-shimmer {
-  0%   { transform: translateX(0) scaleY(1); opacity: 0.75; }
-  50%  { transform: translateX(-2%) scaleY(1.04); opacity: 1; }
-  100% { transform: translateX(0) scaleY(1); opacity: 0.75; }
-}
-
-.wd-cloud   { animation: cloud-drift linear infinite; will-change: transform; }
-.wd-grass   { animation: grass-sway 7s ease-in-out infinite; transform-origin: bottom center; will-change: transform; }
-.wd-water   { animation: water-shimmer 4.5s ease-in-out infinite; will-change: transform, opacity; }
-
-@media (prefers-reduced-motion: reduce) {
-  .wd-cloud, .wd-grass, .wd-water { animation: none !important; }
-}
-
 /* Liquid glass material dressing — paired with useLiquidGlass()
    (frontend/src/hooks/useLiquidGlass.ts), which owns the SVG refraction;
    these classes are the tint/specular-highlight/shadow that make the

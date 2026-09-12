@@ -6,8 +6,8 @@
 
 const FILES = import.meta.glob(
   [
-    "../../../assets/welcome/**/*.{webp,png,jpg,jpeg,avif,mp4,webm}",
-    "!../../../assets/welcome/character-ref.png",
+    "../../assets/welcome/**/*.{webp,png,jpg,jpeg,avif,mp4,webm}",
+    "!../../assets/welcome/character-ref.png",
   ],
   { eager: true, query: "?url", import: "default" },
 ) as Record<string, string>;
@@ -29,9 +29,8 @@ export interface StoryAsset {
 
 const scorch = "linear-gradient(160deg,#c9b45e,#8a7a2e 60%,#5c5220)";
 const bliss = "linear-gradient(180deg,#4a8fd6,#8fd0a6 55%,#3ba85c)";
-const beach = "linear-gradient(180deg,#5aa7e0,#bfe3ff 45%,#e8d6a8)";
 
-/** Poster stills — shown before/behind each Part's scrubbed clip. */
+/** Poster stills — used as card imagery in the welcome cards sections. */
 export const STORY_ASSETS = {
   problemPoster: {
     src: assetUrl("problem-poster.webp"),
@@ -43,25 +42,13 @@ export const STORY_ASSETS = {
     alt: "The same man working at a picnic table in a Swiss meadow, a cow peeking over his shoulder",
     fallback: bliss,
   },
-  featuresPoster: {
-    src: assetUrl("features-poster.webp"),
-    alt: "The same man walking his dog, laptop under one arm, using the app",
-    fallback: bliss,
-  },
-  ctaBg: {
-    src: assetUrl("cta-bg.webp"),
-    alt: "",
-    fallback: beach,
-  },
 } satisfies Record<string, StoryAsset>;
 
 export type StoryAssetKey = keyof typeof STORY_ASSETS;
 
 /**
- * Per-part background clips — encoded with a short keyframe interval and
- * scrubbed by scroll (paused <video>, only `currentTime` is set). Undefined
- * until the file is dropped in; the component falls back to the poster still.
+ * Hero clips used by the comparison strip at the top of the welcome cards
+ * page. Undefined until the file is dropped in.
  */
 export const PROBLEM_VIDEO_MP4 = assetUrl("problem-scrub.mp4");
 export const SOLUTION_VIDEO_MP4 = assetUrl("solution-scrub.mp4");
-export const FEATURES_VIDEO_MP4 = assetUrl("features-scrub.mp4");

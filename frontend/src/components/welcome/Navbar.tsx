@@ -5,7 +5,6 @@ import logo from "@/assets/gymodoro-logo.png";
 const LINKS = [
   { href: "#problem", label: "The problem" },
   { href: "#solution", label: "The fix" },
-  { href: "#features", label: "Inside the app" },
 ];
 
 export default function Navbar() {

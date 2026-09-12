@@ -2,7 +2,8 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/welcome/Navbar";
 import Footer from "@/components/welcome/Footer";
-import StoryWelcome from "@/components/welcome/story/StoryWelcome";
+import WelcomeCards from "@/components/welcome/cards/WelcomeCards";
+import XpWallpaper from "@/components/welcome/XpWallpaper";
 
 export default function Welcome() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -22,11 +23,12 @@ export default function Welcome() {
   return (
     <div
       id="top"
-      className="welcome-daylight relative isolate flex min-h-screen flex-col selection:bg-emerald-500/30"
+      className="relative isolate flex min-h-screen flex-col selection:bg-emerald-500/30"
     >
+      <XpWallpaper />
       <Navbar />
       <main className="flex-1">
-        <StoryWelcome />
+        <WelcomeCards />
       </main>
       <Footer />
     </div>
