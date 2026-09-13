@@ -7,19 +7,34 @@ import GlassArticle from "./GlassArticle";
 import SectionHeading from "./SectionHeading";
 import { usePinnedCardTrack } from "./usePinnedCardTrack";
 
-const BARS = [
-  { flex: 5, height: "100%", color: "#f6efe7" },
-  { flex: 1, height: "34%", color: "#4be277" },
-  { flex: 5, height: "100%", color: "#f6efe7" },
-  { flex: 1, height: "34%", color: "#4be277" },
-  { flex: 5, height: "100%", color: "#f6efe7" },
-  { flex: 1, height: "34%", color: "#4be277" },
-  { flex: 5, height: "100%", color: "#f6efe7" },
-  { flex: 3, height: "62%", color: "#4be277" },
+type CycleTone = "work" | "break";
+
+interface CycleBar {
+  flex: number;
+  height: string;
+  tone: CycleTone;
+}
+
+/** Four work/break rounds, then one long break — mirrors the app's default 25/5×4 + 15 cadence. */
+const CYCLE_BARS: CycleBar[] = [
+  { flex: 5, height: "100%", tone: "work" },
+  { flex: 1, height: "34%", tone: "break" },
+  { flex: 5, height: "100%", tone: "work" },
+  { flex: 1, height: "34%", tone: "break" },
+  { flex: 5, height: "100%", tone: "work" },
+  { flex: 1, height: "34%", tone: "break" },
+  { flex: 5, height: "100%", tone: "work" },
+  { flex: 3, height: "62%", tone: "break" },
 ];
 
-/** Final card of the row: real Google + email sign-up, styled to match the track. */
-function StartCycleCard() {
+const TONE_COLOR: Record<CycleTone, string> = {
+  work: "#f6efe7",
+  break: "#4be277",
+};
+
+const OUTCOME_ROWS = ["Productivity", "Enjoyment", "Satisfaction", "Activeness"];
+
+function SignUpCard() {
   const { googleLogin } = useAuth();
   const [err, setErr] = useState<string | null>(null);
 
@@ -68,6 +83,109 @@ function StartCycleCard() {
   );
 }
 
+function FocusBlockCard() {
+  return (
+    <GlassArticle className="w-[clamp(260px,30vw,360px)]">
+      <div className="font-heading text-[clamp(52px,7vw,76px)] leading-[0.9] font-extrabold tracking-[-0.04em] text-white">
+        25<span className="text-[0.35em] font-normal tracking-normal text-white/70"> min</span>
+      </div>
+      <h3 className="m-0 font-heading text-2xl leading-[1.1] font-bold text-white">One focus block</h3>
+      <p className="m-0 text-base leading-[1.55] text-white">
+        Pick one task. Work it for twenty-five minutes with nothing else on the desk. No method to learn, no
+        setup — the timer decides when you stop.
+      </p>
+      <footer className="mt-auto border-t border-white/10 pt-3.5 text-[13px] font-bold tracking-[0.04em] text-white/60">
+        Some people call this a Pomodoro
+      </footer>
+    </GlassArticle>
+  );
+}
+
+function LeakCard() {
+  return (
+    <GlassArticle className="w-[clamp(260px,30vw,360px)]">
+      <div className="font-heading text-[clamp(52px,7vw,76px)] leading-[0.9] font-extrabold tracking-[-0.04em] text-white">
+        5<span className="text-[0.35em] font-normal tracking-normal text-white/70"> min</span>
+      </div>
+      <h3 className="m-0 font-heading text-2xl leading-[1.1] font-bold text-white">Where it leaks</h3>
+      <p className="m-0 text-base leading-[1.55] text-white">
+        Then you stop — and nothing tells you what to do with the five minutes. So the phone fills it, and you
+        come back to the desk more tired than you left it. Still sitting.
+      </p>
+    </GlassArticle>
+  );
+}
+
+function SwapCard() {
+  return (
+    <GlassArticle className="w-[clamp(260px,30vw,360px)]">
+      <span className="font-mono text-[11px] font-bold tracking-[0.2em] text-[#4be277] uppercase">
+        The swap
+      </span>
+      <h3 className="m-0 font-heading text-2xl leading-[1.1] font-bold text-white">
+        The same five minutes, spent on your body.
+      </h3>
+      <p className="m-0 text-base leading-[1.55] text-white">
+        When the break timer fires, Gymodoro hands you one real exercise — push-ups, cat-cow, a plank — with a
+        video and a difficulty. You do it where you are. No gym, no kit, no scheduling.
+      </p>
+      <div className="mt-auto flex flex-wrap gap-2 text-[13px] font-bold tracking-[0.04em] text-white/70">
+        <span className="rounded-full border border-white/20 px-3 py-1">Roll the dice</span>
+        <span className="rounded-full border border-white/20 px-3 py-1">Or pick your own</span>
+      </div>
+    </GlassArticle>
+  );
+}
+
+function CycleChartCard() {
+  return (
+    <GlassArticle className="w-[clamp(260px,30vw,360px)]">
+      <h3 className="m-0 font-heading text-2xl leading-[1.1] font-bold text-white">
+        Four rounds, then a long one
+      </h3>
+      <div className="flex h-28 items-end gap-1.5">
+        {CYCLE_BARS.map((bar, i) => (
+          <span
+            key={i}
+            className="rounded-t-sm"
+            style={{ flex: bar.flex, height: bar.height, background: TONE_COLOR[bar.tone] }}
+          />
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] font-bold tracking-[0.04em] text-white/70">
+        <span>25 focus</span>
+        <span>5 active break</span>
+        <span>15 long break</span>
+      </div>
+      <p className="m-0 text-base leading-[1.55] text-white">
+        Four cycles, then fifteen minutes. That's four short movement sets and one longer one before lunch — a
+        workout you never scheduled.
+      </p>
+    </GlassArticle>
+  );
+}
+
+function OutcomesCard() {
+  return (
+    <GlassArticle className="w-[clamp(260px,30vw,360px)] text-white">
+      <h3 className="m-0 font-heading text-[27px] leading-[1.05] font-extrabold tracking-[-0.01em]">
+        Both halves go up
+      </h3>
+      <dl className="m-0 flex flex-col gap-3 font-heading text-[19px] font-bold">
+        {OUTCOME_ROWS.map((label) => (
+          <div
+            key={label}
+            className="flex items-center justify-between gap-3 border-b border-white/10 pb-2.5 last:border-0"
+          >
+            <dt className="uppercase">{label}</dt>
+            <dd className="m-0 text-[#4be277]">Up</dd>
+          </div>
+        ))}
+      </dl>
+    </GlassArticle>
+  );
+}
+
 /** Section 02 — the fix: pinned horizontal card row ending on the sign-up card. */
 export default function SolutionSection() {
   const { sectionRef, trackRef, fillRef } = usePinnedCardTrack();
@@ -90,116 +208,14 @@ export default function SolutionSection() {
         <div className="flex flex-none items-center overflow-x-hidden overflow-y-visible py-6">
           <div
             ref={trackRef}
-            className="flex items-start gap-[clamp(16px,2vw,28px)] px-[5vw] will-change-transform"
+            className="relative flex items-start gap-[clamp(16px,2vw,28px)] px-[5vw] will-change-transform"
           >
-            <GlassArticle className="w-[clamp(260px,30vw,360px)]">
-              <div className="font-heading text-[clamp(52px,7vw,76px)] leading-[0.9] font-extrabold tracking-[-0.04em] text-white">
-                25<span className="text-[0.35em] tracking-normal text-white/70"> min</span>
-              </div>
-              <h3 className="m-0 font-heading text-2xl leading-[1.1] font-bold text-white">
-                One focus block
-              </h3>
-              <p className="m-0 text-base leading-[1.55] text-white">
-                Pick one task. Work it for twenty-five minutes with nothing else on the desk. No
-                method to learn, no setup — the timer decides when you stop.
-              </p>
-              <div className="mt-auto border-t border-[#1b1f2b] pt-3.5 text-[13px] text-white/70">
-                Some people call this a Pomodoro
-              </div>
-            </GlassArticle>
-
-            <GlassArticle className="w-[clamp(260px,30vw,360px)]">
-              <div className="font-heading text-[clamp(52px,7vw,76px)] leading-[0.9] font-extrabold tracking-[-0.04em] text-[#e8734a]">
-                5<span className="text-[0.35em] tracking-normal text-white/70"> min</span>
-              </div>
-              <h3 className="m-0 font-heading text-2xl leading-[1.1] font-bold text-white">
-                Where it leaks
-              </h3>
-              <p className="m-0 text-base leading-[1.55] text-white">
-                Then you stop — and nothing tells you what to do with the five minutes. So the
-                phone fills it, and you come back to the desk more tired than you left it. Still
-                sitting.
-              </p>
-              <div className="mt-auto border-t border-[#2b1d18] pt-3.5 text-[13px] font-bold text-white">
-                State of body: <span className="text-[#e8734a]">Sedentary</span>
-              </div>
-            </GlassArticle>
-
-            <GlassArticle className="w-[clamp(280px,34vw,420px)]">
-              <div className="text-[11px] tracking-[0.2em] text-white/60 uppercase">
-                The swap
-              </div>
-              <h3 className="m-0 font-heading text-[clamp(28px,3.6vw,38px)] leading-none font-extrabold tracking-[-0.02em] text-white">
-                The same five minutes, spent on your body.
-              </h3>
-              <p className="m-0 text-base leading-[1.55] text-white">
-                When the break timer fires, Gymodoro hands you one real exercise — push-ups,
-                cat-cow, a plank — with a video and a difficulty. You do it where you are. No gym,
-                no kit, no scheduling.
-              </p>
-              <div className="mt-auto flex flex-wrap gap-2">
-                <span className="rounded-full border border-white/30 px-3 py-1.5 text-[13px] font-bold text-white">
-                  Roll the dice
-                </span>
-                <span className="rounded-full border border-white/30 px-3 py-1.5 text-[13px] font-bold text-white">
-                  Or pick your own
-                </span>
-              </div>
-            </GlassArticle>
-
-            <GlassArticle className="w-[clamp(280px,34vw,420px)]">
-              <h3 className="m-0 font-heading text-2xl leading-[1.1] font-bold text-white">
-                Four rounds, then a long one
-              </h3>
-              <div className="flex h-24 items-end gap-1">
-                {BARS.map((b, i) => (
-                  <div
-                    key={i}
-                    className="rounded-[3px]"
-                    style={{ flex: b.flex, height: b.height, background: b.color }}
-                  />
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-4 text-[13px] text-white">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-[#f6efe7]" />
-                  25 focus
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-[#4be277]" />5 active break
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-[#4be277]" />
-                  15 long break
-                </span>
-              </div>
-              <p className="m-0 mt-auto text-base leading-[1.55] text-white">
-                Four cycles, then fifteen minutes. That's four short movement sets and one longer
-                one before lunch — a workout you never scheduled.
-              </p>
-            </GlassArticle>
-
-            <GlassArticle className="w-[clamp(260px,30vw,360px)]">
-              <h3 className="m-0 font-heading text-2xl leading-[1.1] font-bold text-white">
-                Both halves go up
-              </h3>
-              <div className="flex flex-col gap-3 font-heading text-lg font-bold text-white">
-                {["Productivity", "Enjoyment", "Satisfaction", "Activeness"].map((row) => (
-                  <div
-                    key={row}
-                    className="flex items-center justify-between gap-3 border-b border-[#16301f] pb-2.5 last:border-0"
-                  >
-                    <span className="uppercase">{row}</span>
-                    <span className="text-[#4be277]">Up</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-auto border-t border-[#16301f] pt-3.5 text-[13px] font-bold text-white">
-                State of body: <span className="text-[#4be277]">Active</span>
-              </div>
-            </GlassArticle>
-
-            <StartCycleCard />
+            <FocusBlockCard />
+            <LeakCard />
+            <SwapCard />
+            <CycleChartCard />
+            <OutcomesCard />
+            <SignUpCard />
           </div>
         </div>
       </div>

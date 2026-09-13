@@ -1,5 +1,24 @@
 import { RotateCcw, Play, Pause, PictureInPicture2, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_TIGHT } from "@/lib/glassPresets";
+
+function AddTimeButton({ minutes, onClick }: { minutes: number; onClick: () => void }) {
+  const glassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+  return (
+    <button
+      ref={glassRef}
+      onClick={onClick}
+      className={cn(
+        "glass-tight px-4 py-1.5 rounded-lg text-sm font-semibold font-poppins",
+        "border border-white/30",
+        "text-white/85 cursor-pointer hover:bg-white/20 transition-colors"
+      )}
+    >
+      +{minutes}
+    </button>
+  );
+}
 
 interface Mode {
   id: "focus" | "short" | "long";
@@ -36,6 +55,10 @@ export default function FocusView({
   onPopOut,
   contentLeft,
 }: Props) {
+  const resetGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+  const popOutGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+  const finishGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+
   return (
     <div
       className="absolute inset-0 flex flex-col items-center justify-center z-10 gap-4 pt-36 pb-20"
@@ -70,28 +93,19 @@ export default function FocusView({
       {/* Add Time Buttons */}
       <div className="flex items-center gap-2">
         {[1, 5, 10].map((mins) => (
-          <button
-            key={mins}
-            onClick={() => onAddTime(mins)}
-            className={cn(
-              "px-4 py-1.5 rounded-lg text-sm font-semibold font-poppins",
-              "border border-white/30 bg-white/10 backdrop-blur-md",
-              "text-white/85 cursor-pointer hover:bg-white/20 transition-colors"
-            )}
-          >
-            +{mins}
-          </button>
+          <AddTimeButton key={mins} minutes={mins} onClick={() => onAddTime(mins)} />
         ))}
       </div>
 
       {/* Control Buttons */}
       <div className="flex items-center gap-3.5 mt-2">
         <button
+          ref={resetGlassRef}
           onClick={onReset}
           aria-label="Reset"
           className={cn(
-            "w-12 h-12 rounded-full border border-white/25 bg-white/6",
-            "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
+            "glass-tight w-12 h-12 rounded-full border border-white/25",
+            "text-white cursor-pointer flex items-center justify-center",
             "hover:bg-white/12 transition-colors"
           )}
         >
@@ -112,12 +126,13 @@ export default function FocusView({
         </button>
 
         <button
+          ref={popOutGlassRef}
           onClick={onPopOut}
           aria-label="Pop out timer"
           title="Pop out timer"
           className={cn(
-            "w-12 h-12 rounded-full border border-white/25 bg-white/6",
-            "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
+            "glass-tight w-12 h-12 rounded-full border border-white/25",
+            "text-white cursor-pointer flex items-center justify-center",
             "hover:bg-white/12 transition-colors"
           )}
         >
@@ -125,12 +140,13 @@ export default function FocusView({
         </button>
 
         <button
+          ref={finishGlassRef}
           onClick={onFinish}
           aria-label="Finish now"
           title="Finish now"
           className={cn(
-            "w-12 h-12 rounded-full border border-white/25 bg-white/6",
-            "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
+            "glass-tight w-12 h-12 rounded-full border border-white/25",
+            "text-white cursor-pointer flex items-center justify-center",
             "hover:bg-white/12 transition-colors"
           )}
         >

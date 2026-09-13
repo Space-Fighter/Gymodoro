@@ -16,6 +16,7 @@ import { playAlarmChime, scheduleAlarmChime } from "@/lib/chime";
 import { getAutoStartBreaksEnabled } from "@/lib/timerSettings";
 import { useTimerPopout } from "@/hooks/useTimerPopout";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_TIGHT } from "@/lib/glassPresets";
 import logo from "@/assets/gymodoro-logo.png";
 
 const BACKGROUND_STORAGE_KEY = "gymodoro-background";
@@ -471,8 +472,8 @@ export default function Timer({
   });
 
   const contentLeft = sidebarOpen ? "260px" : "90px";
-  const logoutGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -60, chroma: 3, blur: 4 });
-  const collapsedToggleGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -60, chroma: 3, blur: 4 });
+  const logoutGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+  const collapsedToggleGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-black">

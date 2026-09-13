@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_PANEL } from "@/lib/glassPresets";
 
 interface Props {
   icon: ReactNode;
@@ -9,11 +11,12 @@ interface Props {
 }
 
 export default function StatTile({ icon, label, value, className }: Props) {
+  const glassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
   return (
     <div
+      ref={glassRef}
       className={cn(
-        "rounded-2xl border border-white/25 bg-white/12 backdrop-blur-xl p-5 flex flex-col gap-3",
-        "shadow-[0_4px_24px_rgba(0,0,0,0.15)]",
+        "glass rounded-2xl border border-white/25 p-5 flex flex-col gap-3",
         className
       )}
     >

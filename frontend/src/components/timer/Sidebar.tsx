@@ -1,6 +1,7 @@
 import { BarChart3, ChevronLeft, Clock, Dumbbell, Palette, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_PANEL, GLASS_TIGHT } from "@/lib/glassPresets";
 
 interface NavItem {
   id: string;
@@ -33,14 +34,8 @@ export default function Sidebar({
     { id: "settings", label: "Settings", icon: <Settings size={18} /> },
   ];
 
-  const glassRef = useLiquidGlass<HTMLDivElement>({
-    scale: -70,
-    chroma: 5,
-    mapBlur: 18,
-    blur: 5,
-    saturate: 1.4,
-  });
-  const collapseGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -60, chroma: 3, blur: 3 });
+  const glassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
+  const collapseGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
 
   return (
     <div

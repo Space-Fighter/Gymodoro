@@ -5,6 +5,8 @@ import type { ExerciseType } from "@/types/exercise";
 import GifLoop from "@/components/timer/GifLoop";
 import TagList from "@/components/timer/TagList";
 import { getYoutubeEmbedUrl } from "@/lib/youtube";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_TIGHT } from "@/lib/glassPresets";
 
 interface Mode {
   id: "focus" | "short" | "long";
@@ -32,12 +34,14 @@ function DropdownToggle({
   onToggle: () => void;
   compact?: boolean;
 }) {
+  const glassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
   return (
     <button
+      ref={glassRef}
       onClick={onToggle}
       className={cn(
-        "flex items-center rounded-lg",
-        "border border-white/15 bg-black/35 backdrop-blur-md",
+        "glass-tight flex items-center rounded-lg",
+        "border border-white/15",
         "text-white font-semibold hover:bg-black/50 transition-colors",
         compact
           ? "w-fit gap-2 px-3 py-1.5 text-xs"
@@ -119,9 +123,16 @@ export default function BreakView({
   const controlBtnPx = 48;
   const controlIconPx = 18;
 
+  const rollDiceGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+  const chooseActivityGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+  const resetGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+  const popOutGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+  const finishGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+  const descriptionGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_TIGHT);
+
   return (
     <div
-      className="absolute inset-0 flex flex-col z-10 pt-36 px-6"
+      className="absolute inset-0 flex flex-col z-10 pt-36 pl-6"
       style={{ left: contentLeft, transition: "left 0.25s ease" }}
     >
       {/* Mode Dots */}
@@ -146,19 +157,21 @@ export default function BreakView({
       </div>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-2 gap-6 flex-1 overflow-hidden">
+      <div className="grid grid-cols-2 gap-6 flex-1 overflow-y-auto pr-6 [scrollbar-gutter:stable] glass-scrollbar">
         {/* Left: Activity Selection */}
-        <div className="flex flex-col gap-4 overflow-y-auto pr-4">
+        <div className="flex flex-col gap-4 pr-4">
           <div className="flex gap-3">
             <button
+              ref={rollDiceGlassRef}
               onClick={onActivityChange}
-              className="flex-1 px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/15 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
+              className="glass-tight flex-1 px-4 py-3 rounded-lg border border-white/20 hover:bg-white/15 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
             >
               <Dice6 size={18} /> Roll The Dice
             </button>
             <button
+              ref={chooseActivityGlassRef}
               onClick={onActivitySelect}
-              className="flex-1 px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/15 text-white font-bold text-sm transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
+              className="glass-tight flex-1 px-4 py-3 rounded-lg border border-white/20 hover:bg-white/15 text-white font-bold text-sm transition-colors"
             >
               Choose Activity
             </button>
@@ -226,7 +239,7 @@ export default function BreakView({
         </div>
 
         {/* Right: Timer and Image */}
-        <div className="flex flex-col gap-4 overflow-y-auto pl-4">
+        <div className="flex flex-col gap-4 pl-4">
           <div className="flex flex-col items-center gap-3 shrink-0 rounded-3xl px-8 py-4">
             <div
               className="font-bold text-white font-poppins drop-shadow-lg"
@@ -237,11 +250,12 @@ export default function BreakView({
 
             <div className="flex items-center gap-3">
               <button
+                ref={resetGlassRef}
                 onClick={onReset}
                 aria-label="Reset"
                 className={cn(
-                  "rounded-full border border-white/25 bg-white/6",
-                  "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
+                  "glass-tight rounded-full border border-white/25",
+                  "text-white cursor-pointer flex items-center justify-center",
                   "hover:bg-white/12 transition-colors"
                 )}
                 style={{ width: controlBtnPx, height: controlBtnPx }}
@@ -263,12 +277,13 @@ export default function BreakView({
               </button>
 
               <button
+                ref={popOutGlassRef}
                 onClick={onPopOut}
                 aria-label="Pop out timer"
                 title="Pop out timer"
                 className={cn(
-                  "rounded-full border border-white/25 bg-white/6",
-                  "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
+                  "glass-tight rounded-full border border-white/25",
+                  "text-white cursor-pointer flex items-center justify-center",
                   "hover:bg-white/12 transition-colors"
                 )}
                 style={{ width: controlBtnPx, height: controlBtnPx }}
@@ -277,12 +292,13 @@ export default function BreakView({
               </button>
 
               <button
+                ref={finishGlassRef}
                 onClick={onFinish}
                 aria-label="Finish now"
                 title="Finish now"
                 className={cn(
-                  "rounded-full border border-white/25 bg-white/6",
-                  "backdrop-blur-md text-white cursor-pointer flex items-center justify-center",
+                  "glass-tight rounded-full border border-white/25",
+                  "text-white cursor-pointer flex items-center justify-center",
                   "hover:bg-white/12 transition-colors"
                 )}
                 style={{ width: controlBtnPx, height: controlBtnPx }}
@@ -336,7 +352,10 @@ export default function BreakView({
                 onToggle={onToggleDescription}
               />
               {descriptionOpen && (
-                <div className="px-4 py-3 rounded-lg bg-black/30 backdrop-blur-md border border-white/10 text-white text-sm leading-relaxed">
+                <div
+                  ref={descriptionGlassRef}
+                  className="glass-tight px-4 py-3 rounded-lg border border-white/10 text-white text-sm leading-relaxed"
+                >
                   {activity.description ? (
                     <ul className="list-disc pl-5 space-y-1.5">
                       {descriptionToBullets(activity.description).map((sentence, i) => (

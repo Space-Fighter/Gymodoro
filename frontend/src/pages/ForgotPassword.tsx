@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import logo from "@/assets/gymodoro-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { getBackgroundById } from "@/components/timer/backgrounds";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_PANEL, GLASS_TIGHT } from "@/lib/glassPresets";
 
 const CAFE_BACKGROUND = getBackgroundById("rainy-cafe");
 
@@ -12,6 +14,10 @@ export default function ForgotPassword() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [sentMessage, setSentMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const cardGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
+  const footerGlassRef = useLiquidGlass<HTMLElement>(GLASS_TIGHT);
+  const errorGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_TIGHT);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +57,10 @@ export default function ForgotPassword() {
           <div className="w-[450px] h-[450px] bg-emerald-500/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="w-full max-w-md bg-card/70 backdrop-blur-xl border border-border/60 rounded-2xl p-6 sm:p-10 shadow-2xl relative z-10">
+        <div
+          ref={cardGlassRef}
+          className="glass w-full max-w-md border border-border/60 rounded-2xl p-6 sm:p-10 relative z-10"
+        >
           {sentMessage ? (
             <div className="text-center space-y-4">
               <div className="text-4xl">📬</div>
@@ -79,7 +88,10 @@ export default function ForgotPassword() {
               </div>
 
               {localError && (
-                <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                <div
+                  ref={errorGlassRef}
+                  className="glass-tight mb-4 p-3 rounded-lg border border-red-500/30 text-red-400 text-sm"
+                >
                   {localError}
                 </div>
               )}
@@ -126,7 +138,10 @@ export default function ForgotPassword() {
         </div>
       </main>
 
-      <footer className="w-full py-6 px-6 sm:px-12 border-t border-border/20 bg-background/40 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-3">
+      <footer
+        ref={footerGlassRef}
+        className="glass-tight w-full py-6 px-6 sm:px-12 border-t border-border/20 flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-3"
+      >
         <div className="flex items-center gap-2">
           <img src={logo} alt="Logo" className="w-5 h-5 object-contain" />
           <span>Gymodoro</span>

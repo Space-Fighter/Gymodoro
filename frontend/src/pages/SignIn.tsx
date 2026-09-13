@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
 import { getBackgroundById } from "@/components/timer/backgrounds";
 import GoogleIcon from "@/components/GoogleIcon";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_PANEL, GLASS_TIGHT } from "@/lib/glassPresets";
 
 const CAFE_BACKGROUND = getBackgroundById("rainy-cafe");
 
@@ -61,6 +63,12 @@ export default function SignIn() {
 
   const { promptGoogleSignIn } = useGoogleSignIn(handleGoogleCredential);
 
+  const cardGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
+  const dividerGlassRef = useLiquidGlass<HTMLSpanElement>(GLASS_TIGHT);
+  const footerGlassRef = useLiquidGlass<HTMLElement>(GLASS_TIGHT);
+  const noticeGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_TIGHT);
+  const errorGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_TIGHT);
+
   return (
     <div className="relative isolate min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-emerald-500/30">
       {/* Cafe background — fixed behind the whole page, with a scrim for legibility */}
@@ -89,7 +97,10 @@ export default function SignIn() {
           <div className="w-[450px] h-[450px] bg-emerald-500/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="w-full max-w-md bg-card/70 backdrop-blur-xl border border-border/60 rounded-2xl p-6 sm:p-10 shadow-2xl relative z-10">
+        <div
+          ref={cardGlassRef}
+          className="glass w-full max-w-md border border-border/60 rounded-2xl p-6 sm:p-10 relative z-10"
+        >
           <div className="text-center mb-8">
             <h1 className="font-heading font-extrabold text-3xl text-foreground tracking-tight mb-2">
               Welcome back
@@ -101,10 +112,11 @@ export default function SignIn() {
 
           {verificationNotice && (
             <div
+              ref={noticeGlassRef}
               className={
                 verificationNotice.kind === "success"
-                  ? "mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm"
-                  : "mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm"
+                  ? "glass-tight mb-4 p-3 rounded-lg border border-emerald-500/30 text-emerald-400 text-sm"
+                  : "glass-tight mb-4 p-3 rounded-lg border border-red-500/30 text-red-400 text-sm"
               }
             >
               {verificationNotice.text}
@@ -112,7 +124,10 @@ export default function SignIn() {
           )}
 
           {(error || localError) && (
-            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+            <div
+              ref={errorGlassRef}
+              className="glass-tight mb-4 p-3 rounded-lg border border-red-500/30 text-red-400 text-sm"
+            >
               {error || localError}
             </div>
           )}
@@ -176,7 +191,10 @@ export default function SignIn() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
-            <span className="relative bg-card/70 backdrop-blur-xl px-4 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+            <span
+              ref={dividerGlassRef}
+              className="glass-tight relative px-4 text-[11px] font-mono uppercase tracking-widest text-muted-foreground"
+            >
               or continue with
             </span>
           </div>
@@ -207,7 +225,10 @@ export default function SignIn() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full py-6 px-6 sm:px-12 border-t border-border/20 bg-background/40 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-3">
+      <footer
+        ref={footerGlassRef}
+        className="glass-tight w-full py-6 px-6 sm:px-12 border-t border-border/20 flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-3"
+      >
         <div className="flex items-center gap-2">
           <img src={logo} alt="Logo" className="w-5 h-5 object-contain" />
           <span>Gymodoro</span>

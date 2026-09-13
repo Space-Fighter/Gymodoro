@@ -21,6 +21,7 @@ export default function Footer() {
           <div className="flex items-center gap-6 text-xs font-medium text-white/80">
             <a href="#problem" className="transition-colors hover:text-white">The problem</a>
             <a href="#solution" className="transition-colors hover:text-white">The fix</a>
+            <a href="#gallery" className="transition-colors hover:text-white">Gallery</a>
             <Link to="/signin" className="transition-colors hover:text-white">Sign in</Link>
           </div>
         </div>

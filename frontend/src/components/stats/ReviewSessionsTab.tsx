@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { CheckCircle2, CircleDashed, Dumbbell, SkipForward, XCircle } from "lucide-react";
 import { useSessions } from "@/hooks/useSessions";
-import type { SessionStatus } from "@/types/session";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_TIGHT } from "@/lib/glassPresets";
+import type { Session, SessionStatus } from "@/types/session";
 
 const STATUS_META: Record<
   SessionStatus,
@@ -34,6 +36,42 @@ const STATUS_META: Record<
   },
 };
 
+function SessionRow({ session }: { session: Session }) {
+  const meta = STATUS_META[session.status];
+  const glassRef = useLiquidGlass<HTMLDivElement>(GLASS_TIGHT);
+  return (
+    <div
+      ref={glassRef}
+      className="glass-tight rounded-xl border border-white/25 p-4 flex items-center justify-between gap-4"
+    >
+      <div className="flex flex-col gap-1">
+        <div className="text-white font-semibold font-poppins">
+          {new Date(session.startedAt).toLocaleString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          })}
+        </div>
+        <div className="flex items-center gap-3 text-white/50 text-sm">
+          <span>{session.workMinutes}m focus</span>
+          <span>{session.breakMinutes}m break</span>
+          {session.exercise && (
+            <span className="flex items-center gap-1">
+              <Dumbbell size={14} />
+              {session.exercise.name}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className={`flex items-center gap-1.5 text-sm font-semibold ${meta.className}`}>
+        {meta.icon}
+        {meta.label}
+      </div>
+    </div>
+  );
+}
+
 export default function ReviewSessionsTab() {
   const { sessions, loading } = useSessions(30);
 
@@ -51,40 +89,9 @@ export default function ReviewSessionsTab() {
 
   return (
     <div className="flex flex-col gap-2">
-      {sessions.map((session) => {
-        const meta = STATUS_META[session.status];
-        return (
-          <div
-            key={session.id}
-            className="rounded-xl border border-white/25 bg-white/12 backdrop-blur-xl p-4 flex items-center justify-between gap-4 shadow-[0_4px_24px_rgba(0,0,0,0.15)]"
-          >
-            <div className="flex flex-col gap-1">
-              <div className="text-white font-semibold font-poppins">
-                {new Date(session.startedAt).toLocaleString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </div>
-              <div className="flex items-center gap-3 text-white/50 text-sm">
-                <span>{session.workMinutes}m focus</span>
-                <span>{session.breakMinutes}m break</span>
-                {session.exercise && (
-                  <span className="flex items-center gap-1">
-                    <Dumbbell size={14} />
-                    {session.exercise.name}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className={`flex items-center gap-1.5 text-sm font-semibold ${meta.className}`}>
-              {meta.icon}
-              {meta.label}
-            </div>
-          </div>
-        );
-      })}
+      {sessions.map((session) => (
+        <SessionRow key={session.id} session={session} />
+      ))}
     </div>
   );
 }

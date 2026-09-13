@@ -1,5 +1,7 @@
 import { useState } from "react";
 import type { StatsHourEntry } from "@/types/session";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_PANEL, GLASS_TIGHT } from "@/lib/glassPresets";
 
 interface Props {
   byHour: StatsHourEntry[];
@@ -14,13 +16,15 @@ function formatHourLabel(hour: number) {
 
 export default function HourlyChart({ byHour, rangeLabel }: Props) {
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
+  const glassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
+  const tooltipGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_TIGHT);
 
   const maxMinutes = Math.max(1, ...byHour.map((h) => h.focusMinutes));
   const totalFocusMinutes = byHour.reduce((sum, h) => sum + h.focusMinutes, 0);
   const hovered = hoveredHour !== null ? byHour[hoveredHour] : null;
 
   return (
-    <div className="rounded-2xl border border-white/25 bg-white/12 backdrop-blur-xl p-5 shadow-[0_4px_24px_rgba(0,0,0,0.15)]">
+    <div ref={glassRef} className="glass rounded-2xl border border-white/25 p-5">
       <div className="flex items-center justify-between mb-1">
         <span className="text-white font-semibold text-sm">
           Focus Minutes by Hour — <span className="text-white/70">{rangeLabel}</span>
@@ -65,7 +69,10 @@ export default function HourlyChart({ byHour, rangeLabel }: Props) {
                       style={{ height: `${Math.max(heightPct, entry.focusMinutes > 0 ? 4 : 1)}%` }}
                     />
                     {hovered?.hour === entry.hour && (
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10 w-40 rounded-xl border border-white/25 bg-white/15 backdrop-blur-xl p-3 shadow-xl pointer-events-none">
+                      <div
+                        ref={tooltipGlassRef}
+                        className="glass-tight absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10 w-40 rounded-xl border border-white/25 p-3 pointer-events-none"
+                      >
                         <div className="text-white font-semibold text-sm mb-1">
                           {formatHourLabel(entry.hour)}
                         </div>

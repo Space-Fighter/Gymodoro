@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_PANEL } from "@/lib/glassPresets";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,19 +20,12 @@ export default function GlassArticle({
   children: ReactNode;
   className?: string;
 }) {
-  const ref = useLiquidGlass<HTMLElement>({
-    scale: -70,
-    chroma: 5,
-    mapBlur: 18,
-    blur: 5,
-    saturate: 1.4,
-    radius: 14,
-  });
+  const ref = useLiquidGlass<HTMLElement>({ ...GLASS_PANEL, radius: 26 });
   return (
     <article
       ref={ref}
       className={cn(
-        "glass flex flex-shrink-0 flex-col gap-4 rounded-[14px] border border-white/10 p-[22px] text-white",
+        "glass flex flex-shrink-0 flex-col gap-4 rounded-[26px] border border-white/10 p-[22px] text-white",
         className,
       )}
     >

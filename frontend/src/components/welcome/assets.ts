@@ -29,6 +29,7 @@ export interface StoryAsset {
 
 const scorch = "linear-gradient(160deg,#c9b45e,#8a7a2e 60%,#5c5220)";
 const bliss = "linear-gradient(180deg,#4a8fd6,#8fd0a6 55%,#3ba85c)";
+const steel = "linear-gradient(160deg,#2a3142,#181c26 60%,#0d0f16)";
 
 /** Poster stills — used as card imagery in the welcome cards sections. */
 export const STORY_ASSETS = {
@@ -41,6 +42,51 @@ export const STORY_ASSETS = {
     src: assetUrl("solution-poster.webp"),
     alt: "The same man working at a picnic table in a Swiss meadow, a cow peeking over his shoulder",
     fallback: bliss,
+  },
+  problemWorkATon: {
+    src: assetUrl("problem-work-a-ton.jpg"),
+    alt: "A stressed man rubbing his head while staring at a monitor full of charts",
+    fallback: scorch,
+  },
+  problemTiredBreak: {
+    src: assetUrl("problem-tired-break.jpg"),
+    alt: "Hands scrolling a grid of photos on a phone",
+    fallback: scorch,
+  },
+  problemBrainHacked: {
+    src: assetUrl("problem-brain-hacked.jpg"),
+    alt: "A young man lying in bed at night, smiling at his phone",
+    fallback: scorch,
+  },
+  problemDoomscroll: {
+    src: assetUrl("problem-doomscroll-meme.jpg"),
+    alt: "Comic of a stick figure at a desk captioned 'Me trying to work but my dopamine receptors are fried beyond repair'",
+    fallback: scorch,
+  },
+  shotTimerFocus: {
+    src: assetUrl("screens/timer-focus.webp"),
+    alt: "Gymodoro timer screen, focus mode counting down",
+    fallback: steel,
+  },
+  shotTimerBreak: {
+    src: assetUrl("screens/timer-break.webp"),
+    alt: "Gymodoro timer screen, break mode showing an assigned exercise",
+    fallback: steel,
+  },
+  shotWorkoutLibrary: {
+    src: assetUrl("screens/workout-library.webp"),
+    alt: "Gymodoro Workout Library grid with difficulty and body-area filters applied",
+    fallback: steel,
+  },
+  shotStats: {
+    src: assetUrl("screens/stats.webp"),
+    alt: "Gymodoro Stats screen with tiles and an hourly activity chart",
+    fallback: steel,
+  },
+  shotBackground: {
+    src: assetUrl("screens/background.webp"),
+    alt: "Gymodoro background picker with scenic wallpaper options",
+    fallback: steel,
   },
 } satisfies Record<string, StoryAsset>;
 

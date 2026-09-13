@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/gymodoro-logo.png";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_TIGHT } from "@/lib/glassPresets";
 
 const LINKS = [
   { href: "#problem", label: "The problem" },
@@ -9,6 +11,7 @@ const LINKS = [
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const glassRef = useLiquidGlass<HTMLElement>(GLASS_TIGHT);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 48);
@@ -19,9 +22,10 @@ export default function Navbar() {
 
   return (
     <header
+      ref={scrolled ? glassRef : undefined}
       className={`fixed inset-x-0 top-0 z-40 transition-colors duration-300 ${
         scrolled
-          ? "border-b border-white/10 bg-black/25 backdrop-blur-xl"
+          ? "glass-tight border-b border-white/10"
           : "border-b border-transparent bg-transparent"
       }`}
     >

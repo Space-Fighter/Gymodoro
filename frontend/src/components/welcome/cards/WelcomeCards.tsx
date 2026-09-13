@@ -1,11 +1,13 @@
 import ComparisonClips from "./ComparisonClips";
 import ProblemSection from "./ProblemSection";
 import SolutionSection from "./SolutionSection";
+import GallerySection from "./GallerySection";
 
 /**
- * The /welcome page body: a render comparison of the two hero clips, then two
- * pinned horizontal card rows (the problem, the fix) that end on a real
- * sign-up card. Replaces the old full-bleed video-scrub story.
+ * The /welcome page body: a render comparison of the two hero clips, then
+ * three pinned horizontal card rows (the problem, the fix, the gallery) —
+ * the first two end on a real sign-up card. Replaces the old full-bleed
+ * video-scrub story.
  */
 export default function WelcomeCards() {
   return (
@@ -16,6 +18,9 @@ export default function WelcomeCards() {
       </div>
       <div id="solution">
         <SolutionSection />
+      </div>
+      <div id="gallery">
+        <GallerySection />
       </div>
     </div>
   );

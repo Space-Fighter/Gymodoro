@@ -5,6 +5,46 @@ import type { ExerciseType } from "@/types/exercise";
 import { getYoutubeThumbnailUrl } from "@/lib/youtube";
 import TagList from "@/components/timer/TagList";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_TIGHT } from "@/lib/glassPresets";
+
+function ExerciseCard({
+  exercise,
+  onClick,
+}: {
+  exercise: ExerciseType;
+  onClick: () => void;
+}) {
+  const glassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+  return (
+    <button
+      ref={glassRef}
+      onClick={onClick}
+      className={cn(
+        "glass-tight rounded-2xl border border-white/10 p-4",
+        "hover:border-white/25 transition-all cursor-pointer text-left"
+      )}
+    >
+      <div className="rounded-lg overflow-hidden aspect-video bg-black mb-3 border border-white/5">
+        {exercise.gifUrl ? (
+          <img
+            src={getYoutubeThumbnailUrl(exercise.gifUrl) || exercise.gifUrl}
+            alt={exercise.name}
+            loading="lazy"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-white/30">
+            No preview
+          </div>
+        )}
+      </div>
+
+      <h3 className="text-base font-bold text-white mb-2">{exercise.name}</h3>
+
+      <TagList exercise={exercise} />
+    </button>
+  );
+}
 
 interface Props {
   exercises: ExerciseType[];
@@ -60,8 +100,8 @@ export default function WorkoutLibrary({
     0
   );
 
-  const searchGlassRef = useLiquidGlass<HTMLInputElement>({ scale: -65, chroma: 4, blur: 4 });
-  const filtersButtonGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -65, chroma: 4, blur: 4 });
+  const searchGlassRef = useLiquidGlass<HTMLInputElement>(GLASS_TIGHT);
+  const filtersButtonGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
   // The filters dropdown is deliberately left as a plain opaque panel, not
   // glass: it's a dense grid of small filter-chip text, and refraction plus
   // a translucent tint would fight legibility there more than it would help.
@@ -287,35 +327,11 @@ export default function WorkoutLibrary({
         {filteredExercises.map((exercise) => {
           const origIdx = exercises.indexOf(exercise);
           return (
-            <button
+            <ExerciseCard
               key={exercise.id}
+              exercise={exercise}
               onClick={() => onSelectActivity(origIdx)}
-              className={cn(
-                "bg-black/45 backdrop-blur-lg border border-white/10 rounded-2xl p-4",
-                "hover:border-white/25 transition-all cursor-pointer text-left"
-              )}
-            >
-              <div className="rounded-lg overflow-hidden aspect-video bg-black mb-3 border border-white/5">
-                {exercise.gifUrl ? (
-                  <img
-                    src={getYoutubeThumbnailUrl(exercise.gifUrl) || exercise.gifUrl}
-                    alt={exercise.name}
-                    loading="lazy"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white/30">
-                    No preview
-                  </div>
-                )}
-              </div>
-
-              <h3 className="text-base font-bold text-white mb-2">
-                {exercise.name}
-              </h3>
-
-              <TagList exercise={exercise} />
-            </button>
+            />
           );
         })}
       </div>
