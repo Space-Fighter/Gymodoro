@@ -2,18 +2,21 @@ import logo from "@/assets/gymodoro-logo.png";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-border bg-card/60 py-12 transition-colors duration-200">
+    <footer className="relative bg-transparent py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-          
-          {/* Brand */}
+
+          {/* Brand — the logo is oversized and absolutely positioned so it
+              floats over the page instead of stretching the footer strip. */}
           <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="Gymodoro Logo"
-              className="w-8 h-8 object-contain rounded-lg"
-            />
-            <span className="font-heading font-extrabold text-xl tracking-tight text-foreground">
+            <span className="relative block w-8 h-8">
+              <img
+                src={logo}
+                alt="Gymodoro Logo"
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-none w-[320px] h-[320px] object-contain pointer-events-none"
+              />
+            </span>
+            <span className="relative font-heading font-extrabold text-xl tracking-tight text-foreground ml-40">
               Gymodoro
             </span>
             <span className="hidden sm:inline text-xs text-muted-foreground ml-2">
