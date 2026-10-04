@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { getSoundEffectsEnabled, setSoundEffectsEnabled, playChime } from "@/lib/chime";
 import { getAutoStartBreaksEnabled, setAutoStartBreaksEnabled } from "@/lib/timerSettings";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_PANEL } from "@/lib/glassPresets";
 
 interface Props {
   contentLeft: string;
@@ -18,10 +19,10 @@ export default function SettingsView({ contentLeft }: Props) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const autoStartGlassRef = useLiquidGlass<HTMLDivElement>({ scale: -80, chroma: 5, blur: 4 });
-  const notificationsGlassRef = useLiquidGlass<HTMLDivElement>({ scale: -80, chroma: 5, blur: 4 });
-  const soundGlassRef = useLiquidGlass<HTMLDivElement>({ scale: -80, chroma: 5, blur: 4 });
-  const userInfoGlassRef = useLiquidGlass<HTMLDivElement>({ scale: -80, chroma: 5, blur: 4 });
+  const autoStartGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
+  const notificationsGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
+  const soundGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
+  const userInfoGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
 
   const handleLogout = async () => {
     await logout();

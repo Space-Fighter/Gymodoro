@@ -2,6 +2,8 @@ import { useCallback, useRef } from "react";
 import "@/lib/liquid-glass.js";
 
 export interface LiquidGlassOptions {
+  /** false = skip the SVG refraction filter (tinted glass only). Default true. */
+  refraction?: boolean;
   /** Displacement strength; negative = magnifying bulge. -60 subtle … -180 dramatic. Default -112. */
   scale?: number;
   /** Per-channel scale stagger (prism fringe); 0 disables it. Default 6. */
@@ -51,6 +53,7 @@ export function useLiquidGlass<T extends HTMLElement>(opts?: LiquidGlassOptions)
 
   return useCallback((node: T | null) => {
     instanceRef.current?.destroy();
-    instanceRef.current = node ? window.liquidGlass(node, optsRef.current) : null;
+    const { refraction = true, ...optics } = optsRef.current ?? {};
+    instanceRef.current = node && refraction ? window.liquidGlass(node, optics) : null;
   }, []);
 }

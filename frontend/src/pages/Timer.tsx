@@ -10,13 +10,18 @@ import WorkoutLibrary from "@/components/timer/WorkoutLibrary";
 import BackgroundView from "@/components/timer/BackgroundView";
 import SettingsView from "@/components/timer/SettingsView";
 import { useExercises } from "@/hooks/useExercises";
-import { getBackgroundById, DEFAULT_BACKGROUND_ID } from "@/components/timer/backgrounds";
+import {
+  getBackgroundById,
+  DEFAULT_BACKGROUND_ID,
+  DEFAULT_BACKGROUND_POSITION,
+} from "@/components/timer/backgrounds";
 import StatsView from "@/components/stats/StatsView";
 import { playAlarmChime, scheduleAlarmChime } from "@/lib/chime";
 import { getAutoStartBreaksEnabled } from "@/lib/timerSettings";
 import { useTimerPopout } from "@/hooks/useTimerPopout";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
-import logo from "@/assets/gymodoro-logo.png";
+import { GLASS_TIGHT } from "@/lib/glassPresets";
+import logo from "@/assets/brand/gymodoro-logo.png";
 
 const BACKGROUND_STORAGE_KEY = "gymodoro-background";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -73,6 +78,23 @@ export default function Timer({
   // Number of focus sessions completed so far this cycle — every 4th one
   // triggers a long break instead of a short one (see getNextTimerMode).
   const focusCountRef = useRef(0);
+  // Set by finishNow just before it forces `remaining` to 0, so the
+  // phase-completion effect below records the time actually spent instead
+  // of the full phase duration. Null means "completed naturally in full."
+  const finishEarlyMinutesRef = useRef<number | null>(null);
+  // Set by the phase-completion effect right before it advances to the next
+  // phase, and read (then cleared) by the countdown effect right below it.
+  // Distinguishes "the next phase is starting because a phase just legitimately
+  // ended" from "the user did something" (pressed Play, paused mid-countdown,
+  // switched modes) — only the latter should interrupt the end-of-phase
+  // alarm. Without this, auto-start breaks cut the alarm off after a single
+  // beep, because advancing to the next phase always changes `isFocusMode`,
+  // which the countdown effect treats as a reason to silence it.
+  const advancingAfterCompletionRef = useRef(false);
+  // Set by finishNow to force the next phase to land paused, ignoring the
+  // Auto-start breaks setting — skipping to the end early is itself already
+  // a manual override, and shouldn't also auto-launch the next countdown.
+  const suppressAutoStartRef = useRef(false);
 
   const { exercises, loading } = useExercises();
 
@@ -148,24 +170,43 @@ export default function Timer({
     }
   }, [authedFetch, focusMinutes, longBreakMinutes, shortBreakMinutes, timerMode]);
 
-  const beginBreakForActiveSession = useCallback(() => {
-    const active = activeSessionRef.current;
-    if (!active || active.phase !== "focus") return;
-    const res = authedFetch(`/api/sessions/${active.id}/start-break`, { method: "PATCH" });
-    if (res) res.catch(() => {});
-    activeSessionRef.current = { id: active.id, phase: "break" };
-  }, [authedFetch]);
+  // `workMinutesOverride` records the actual time spent, not the full phase
+  // duration — used when a phase is finished early (see finishNow below).
+  const beginBreakForActiveSession = useCallback(
+    (workMinutesOverride?: number) => {
+      const active = activeSessionRef.current;
+      if (!active || active.phase !== "focus") return;
+      if (workMinutesOverride !== undefined) {
+        const workRes = authedFetch(`/api/sessions/${active.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ workDuration: workMinutesOverride }),
+        });
+        if (workRes) workRes.catch(() => {});
+      }
+      const res = authedFetch(`/api/sessions/${active.id}/start-break`, { method: "PATCH" });
+      if (res) res.catch(() => {});
+      activeSessionRef.current = { id: active.id, phase: "break" };
+    },
+    [authedFetch]
+  );
 
-  const completeActiveSession = useCallback(() => {
-    const active = activeSessionRef.current;
-    if (!active) return;
-    const res = authedFetch(`/api/sessions/${active.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: "completed" }),
-    });
-    if (res) res.catch(() => {});
-    activeSessionRef.current = null;
-  }, [authedFetch]);
+  // `breakMinutesOverride` records the actual time spent, not the full phase
+  // duration — used when a phase is finished early (see finishNow below).
+  const completeActiveSession = useCallback(
+    (breakMinutesOverride?: number) => {
+      const active = activeSessionRef.current;
+      if (!active) return;
+      const body: Record<string, unknown> = { status: "completed" };
+      if (breakMinutesOverride !== undefined) body.breakDuration = breakMinutesOverride;
+      const res = authedFetch(`/api/sessions/${active.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
+      if (res) res.catch(() => {});
+      activeSessionRef.current = null;
+    },
+    [authedFetch]
+  );
 
   const abandonActiveSession = useCallback(() => {
     const active = activeSessionRef.current;
@@ -184,9 +225,15 @@ export default function Timer({
   }, []);
 
   useEffect(() => {
-    // Clear any chime left over from the previous transition first — e.g. the
-    // end-of-phase alarm can still be ringing when the next phase starts.
-    cancelScheduledChime();
+    // Only silence a still-ringing/pre-scheduled chime when this re-run is a
+    // genuine user action (pressing Play, pausing mid-countdown, switching
+    // modes) — not when it's an auto-started next phase immediately
+    // following a completion. See advancingAfterCompletionRef's declaration.
+    const isPhaseCompletionAdvance = advancingAfterCompletionRef.current;
+    advancingAfterCompletionRef.current = false;
+    if (!isPhaseCompletionAdvance) {
+      cancelScheduledChime();
+    }
 
     // Every re-run of this effect starts tracking a *new* countdown period
     // (a fresh manual start/resume, or the next auto-advanced phase) and
@@ -238,12 +285,25 @@ export default function Timer({
     return () => {
       if (timerInterval.current) clearInterval(timerInterval.current);
       document.removeEventListener("visibilitychange", syncFromDeadline);
-      cancelScheduledChime();
+      // Deliberately not cancelling the chime here — this cleanup fires on
+      // every deps change, including the auto-start transition this effect
+      // is specifically trying to let ring through. See the cancellation
+      // logic (and advancingAfterCompletionRef) at the top of this effect,
+      // and the unmount-only effect below for tearing it down on navigation.
     };
     // `remaining` is intentionally read only to anchor the deadline on the
     // first run; adding it to deps would restart the interval every tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, isFocusMode, cancelScheduledChime]);
+
+  // Stops any pending/ringing chime when the Timer page itself unmounts.
+  // Separate from the per-transition logic above, which deliberately leaves
+  // the chime alone on most re-runs.
+  useEffect(() => {
+    return () => {
+      cancelScheduledChime();
+    };
+  }, [cancelScheduledChime]);
 
   // Fires the phase-completion side effect exactly once when the countdown
   // reaches 0 — kept out of the setRemaining updater above, since StrictMode
@@ -254,31 +314,44 @@ export default function Timer({
     // break ends ("back to focus") — gated by the Sound Effects setting.
     // If a chime was pre-scheduled on the audio clock it has already rung
     // (or is about to); only start it here when nothing was scheduled. It
-    // keeps ringing for ~30s, or until the next phase starts (whichever is
-    // first — starting a phase cancels it via the running-effect above).
+    // rings for its full ~30s regardless of what happens next — including
+    // Auto-start immediately beginning the next phase (advancingAfterCompletionRef
+    // below tells the countdown effect not to cut it off for that reason). A
+    // later genuine user action (Play, pause, switch mode, reset) still ends
+    // it early, same as before.
     if (!cancelChimeRef.current) {
       cancelChimeRef.current = playAlarmChime(isFocusMode);
     }
 
+    // finishNow (the ">" skip-to-end button) forces `remaining` to 0 to
+    // reuse this exact completion path, so it behaves identically to a
+    // natural 00:00 — but the session should record actual time spent, not
+    // the full phase duration.
+    const earlyMinutes = finishEarlyMinutesRef.current;
+    finishEarlyMinutesRef.current = null;
+
     if (isFocusMode) {
-      beginBreakForActiveSession();
+      beginBreakForActiveSession(earlyMinutes ?? undefined);
       focusCountRef.current += 1;
     } else {
-      completeActiveSession();
+      completeActiveSession(earlyMinutes ?? undefined);
     }
 
     // Auto-advance through the Pomodoro cycle: focus -> short break (long
     // break every 4th focus session) -> focus -> ... Whether the next phase
     // starts counting down immediately is gated by the Auto-start breaks
-    // setting; when it's off the countdown just resets to the next phase,
-    // paused, same as a manual mode switch.
+    // setting; when it's off (or finishNow suppressed it) the countdown just
+    // resets to the next phase, paused, same as a manual mode switch.
     const nextId = getNextTimerMode(timerMode, focusCountRef.current);
     const nextModeDef = modes.find((m) => m.id === nextId);
     if (!nextModeDef) {
       setRunning(false);
       return;
     }
-    const autoStart = getAutoStartBreaksEnabled();
+    const suppressAutoStart = suppressAutoStartRef.current;
+    suppressAutoStartRef.current = false;
+    const autoStart = !suppressAutoStart && getAutoStartBreaksEnabled();
+    advancingAfterCompletionRef.current = true;
     setTimerMode(nextId);
     setRemaining(nextModeDef.duration * 60);
     setRunning(autoStart);
@@ -293,6 +366,41 @@ export default function Timer({
     completeActiveSession,
     startFocusSession,
   ]);
+
+  // Ends the current phase early — e.g. the user finished their workout
+  // before the break timer ran out, or wants to force a 00:00 completion to
+  // check for regressions in the auto-advance flow without waiting it out.
+  // Stashes the actual elapsed time, then forces `remaining` to 0 (with
+  // `running` true) so the real phase-completion effect above fires — this
+  // deliberately reuses that exact path rather than duplicating it, so the
+  // ring, cycle advance, and time-recording all behave exactly like a real
+  // 00:00. The one deliberate difference: it always lands the next phase
+  // paused (suppressAutoStartRef), regardless of Auto-start breaks — this is
+  // already a manual override, so it shouldn't also auto-launch a countdown.
+  const finishNow = useCallback(() => {
+    if (timerInterval.current) clearInterval(timerInterval.current);
+    cancelScheduledChime();
+    // Play the chime synchronously here, inside the click handler, rather
+    // than leaving it to the completion effect below (which only runs after
+    // this handler returns). Browsers require audio playback to start
+    // within the direct call stack of a user gesture; deferring it into a
+    // useEffect can fall outside that window and get silently blocked. The
+    // completion effect's own `if (!cancelChimeRef.current)` guard then sees
+    // this is already set and skips re-triggering it.
+    cancelChimeRef.current = playAlarmChime(isFocusMode);
+    finishEarlyMinutesRef.current = (currentMode.duration * 60 - remaining) / 60;
+    suppressAutoStartRef.current = true;
+    // If the timer was paused, this call's own setRunning(true) below flips
+    // `running` immediately, which would make the countdown effect re-run
+    // (and cancel the chime just scheduled above) in this same render, before
+    // the completion effect gets a chance to set this flag itself. Setting
+    // it here too covers that ordering gap; the completion effect setting it
+    // again afterward is what protects the *next* transition, into the
+    // paused next phase.
+    advancingAfterCompletionRef.current = true;
+    setRemaining(0);
+    setRunning(true);
+  }, [currentMode.duration, remaining, isFocusMode, cancelScheduledChime]);
 
   const toggleStart = useCallback(() => {
     const next = !running;
@@ -368,8 +476,8 @@ export default function Timer({
   });
 
   const contentLeft = sidebarOpen ? "260px" : "90px";
-  const logoutGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -60, chroma: 3, blur: 4 });
-  const collapsedToggleGlassRef = useLiquidGlass<HTMLButtonElement>({ scale: -60, chroma: 3, blur: 4 });
+  const logoutGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
+  const collapsedToggleGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-black">
@@ -379,7 +487,8 @@ export default function Timer({
         style={{
           backgroundImage: `url("${getBackgroundById(backgroundId).imageUrl}")`,
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition:
+            getBackgroundById(backgroundId).position ?? DEFAULT_BACKGROUND_POSITION,
         }}
       />
 
@@ -454,6 +563,7 @@ export default function Timer({
                   onToggleStart={toggleStart}
                   onReset={reset}
                   onAddTime={addTime}
+                  onFinish={finishNow}
                   onPopOut={popOutTimer}
                   contentLeft={contentLeft}
                 />
@@ -469,6 +579,7 @@ export default function Timer({
                   onSwitchMode={switchMode}
                   onToggleStart={toggleStart}
                   onReset={reset}
+                  onFinish={finishNow}
                   onPopOut={popOutTimer}
                   contentLeft={contentLeft}
                   activity={currentActivity}

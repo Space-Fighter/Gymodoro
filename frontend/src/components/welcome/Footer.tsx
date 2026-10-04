@@ -1,47 +1,40 @@
-import logo from "@/assets/gymodoro-logo.png";
+import { Link } from "react-router-dom";
+import logo from "@/assets/brand/gymodoro-logo.png";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_WELCOME_BAR } from "@/lib/glassPresets";
 
 export default function Footer() {
-  return (
-    <footer className="relative bg-transparent py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+  const glassRef = useLiquidGlass<HTMLElement>(GLASS_WELCOME_BAR);
 
-          {/* Brand — the logo is oversized and absolutely positioned so it
-              floats over the page instead of stretching the footer strip. */}
+  return (
+    <footer ref={glassRef} className="glass-clear border-t border-white/10 py-10 text-white">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center justify-between gap-5 sm:flex-row">
           <div className="flex items-center gap-3">
-            <span className="relative block w-8 h-8">
+            {/* The logo is oversized and absolutely positioned so it floats over the page
+                instead of stretching the footer strip. */}
+            <span className="relative block h-8 w-8">
               <img
                 src={logo}
-                alt="Gymodoro Logo"
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-none w-[320px] h-[320px] object-contain pointer-events-none"
+                alt="Gymodoro"
+                className="pointer-events-none absolute top-1/2 left-1/2 h-[320px] w-[320px] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
               />
             </span>
-            <span className="relative font-heading font-extrabold text-xl tracking-tight text-foreground ml-40">
-              Gymodoro
-            </span>
-            <span className="hidden sm:inline text-xs text-muted-foreground ml-2">
-              — Work. Move. Repeat.
-            </span>
+            <span className="ml-40 font-heading text-xl font-extrabold tracking-tight">Gymodoro</span>
+            <span className="ml-2 hidden text-xs text-white/70 sm:inline">— Work. Move. Repeat.</span>
           </div>
 
-          {/* Center / Rights */}
-          <div className="text-xs text-muted-foreground text-center">
+          <div className="text-center text-xs text-white/70">
             © {new Date().getFullYear()} Gymodoro. All rights reserved.
           </div>
 
-          {/* Legal / Quick Links */}
-          <div className="flex items-center gap-6 text-xs text-muted-foreground font-medium">
-            <a href="#why" className="hover:text-foreground transition-colors">
-              About
-            </a>
-            <a href="#active-breaks" className="hover:text-foreground transition-colors">
-              Active Breaks
-            </a>
-            <a href="#features" className="hover:text-foreground transition-colors">
-              Features
-            </a>
+          <div className="flex items-center gap-6 text-xs font-medium text-white/80">
+            <a href="#problem" className="transition-colors hover:text-white">The problem</a>
+            <a href="#solution" className="transition-colors hover:text-white">The fix</a>
+            <a href="#gallery" className="transition-colors hover:text-white">The app</a>
+            <a href="#facts" className="transition-colors hover:text-white">The science</a>
+            <Link to="/signin" className="transition-colors hover:text-white">Sign in</Link>
           </div>
-
         </div>
       </div>
     </footer>

@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import { useSessionStats } from "@/hooks/useSessionStats";
 import StatTile from "@/components/stats/StatTile";
 import HourlyChart from "@/components/stats/HourlyChart";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_TIGHT } from "@/lib/glassPresets";
 import type { StatsRange } from "@/types/session";
 
 const RANGE_OPTIONS: { id: StatsRange; label: string }[] = [
@@ -21,6 +23,7 @@ function formatFocusTime(minutes: number) {
 
 export default function AnalyticsTab() {
   const [range, setRange] = useState<StatsRange>("today");
+  const rangePillGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_TIGHT);
   const { stats, loading } = useSessionStats(range);
   const rangeLabel = RANGE_OPTIONS.find((opt) => opt.id === range)!.label;
 
@@ -31,7 +34,10 @@ export default function AnalyticsTab() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-2 p-1.5 rounded-full border border-white/20 bg-white/8 backdrop-blur-xl w-fit">
+      <div
+        ref={rangePillGlassRef}
+        className="glass-tight flex items-center gap-2 p-1.5 rounded-full border border-white/20 w-fit"
+      >
         {RANGE_OPTIONS.map((opt) => (
           <button
             key={opt.id}

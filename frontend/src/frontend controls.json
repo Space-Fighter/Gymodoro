@@ -1,0 +1,80 @@
+{
+  "_readme": [
+    "Single source of truth for every liquid-glass / chroma control in the frontend.",
+    "liquidGlass.<preset>: optics passed to useLiquidGlass (via src/lib/glassPresets.ts).",
+    "  refraction  - false skips the SVG refraction filter entirely (plain tinted glass, much cheaper on big moving panels).",
+    "  scale       - displacement strength; negative = magnifying bulge (-60 subtle ... -180 dramatic).",
+    "  chroma      - per-channel scale stagger = the prism / colour-fringe amount. 0 turns it off.",
+    "  mapBlur     - curvature of the bulge (small = hard rim, large = dome).",
+    "  blur        - backdrop blur in px behind the glass. 0 keeps what is behind it perfectly sharp.",
+    "  saturate    - backdrop saturation (1 = unchanged).",
+    "  fallbackBlur- frosted blur used on Safari/Firefox where refraction is unsupported.",
+    "dressing.<preset>: tint / highlight / shadow, applied as CSS variables on :root (live-updates on save).",
+    "Preset (optics) changes apply to newly mounted elements - reload the page after editing them.",
+    "welcomeBackground.tint: the dark overlay above the welcome page background video. enabled=false removes it completely."
+  ],
+  "welcomeBackground": {
+    "tint": {
+      "enabled": true,
+      "opacity": 0.20,
+      "vignette": 0.5
+    }
+  },
+  "liquidGlass": {
+    "panel": {
+      "refraction": true,
+      "scale": -70,
+      "chroma": 8,
+      "mapBlur": 18,
+      "blur": 5,
+      "saturate": 1.4
+    },
+    "tight": {
+      "refraction": true,
+      "scale": -60,
+      "chroma": 5,
+      "blur": 4
+    },
+    "welcomeCard": {
+      "refraction": false,
+      "scale": -70,
+      "chroma": 8,
+      "mapBlur": 18,
+      "blur": 0,
+      "saturate": 1,
+      "fallbackBlur": 0
+    },
+    "welcomeBar": {
+      "refraction": true,
+      "scale": -60,
+      "chroma": 8,
+      "mapBlur": 14,
+      "blur": 0,
+      "saturate": 1,
+      "fallbackBlur": 0
+    }
+  },
+  "dressing": {
+    "panel": {
+      "tintTop": "rgba(255, 255, 255, 0.1)",
+      "tintBottom": "rgba(0, 0, 0, 0.3)",
+      "shadow": "rgba(0, 0, 0, 0.45)",
+      "highlight": "rgba(255, 255, 255, 0.35)",
+      "rim": "rgba(255, 255, 255, 0.12)"
+    },
+    "tight": {
+      "tintTop": "rgba(255, 255, 255, 0.14)",
+      "tintBottom": "rgba(0, 0, 0, 0.22)",
+      "shadow": "rgba(0, 0, 0, 0.35)",
+      "highlight": "rgba(255, 255, 255, 0.4)",
+      "rim": "rgba(255, 255, 255, 0.14)"
+    },
+    "clear": {
+      "tintTop": "rgba(255, 255, 255, 0.05)",
+      "tintBottom": "rgba(255, 255, 255, 0.01)",
+      "shadow": "rgba(0, 0, 0, 0.18)",
+      "highlight": "rgba(255, 255, 255, 0.45)",
+      "rim": "rgba(255, 255, 255, 0.2)"
+    }
+  }
+}

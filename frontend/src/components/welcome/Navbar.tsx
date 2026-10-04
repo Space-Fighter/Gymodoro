@@ -1,76 +1,74 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import logo from "@/assets/brand/gymodoro-logo.png";
+import { useLiquidGlass } from "@/hooks/useLiquidGlass";
+import { GLASS_WELCOME_BAR } from "@/lib/glassPresets";
 
-// The logo (270px) and nav's max width (768px, from max-w-3xl) are fixed
-// constants, so the "centered as a pair" position is a deterministic CSS
-// formula — no runtime measurement needed:
-//   groupWidth = logoWidth + gap + navWidth = 270 + 24 + 768 = 1062
-//   navLeft = (100vw - groupWidth) / 2 + logoWidth + gap = 50vw - 237px
+const LINKS = [
+  { href: "#problem", label: "The problem" },
+  { href: "#solution", label: "The fix" },
+  { href: "#gallery", label: "The app" },
+  { href: "#facts", label: "The science" },
+];
 
 export default function Navbar() {
-  const [pastLogo, setPastLogo] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const glassRef = useLiquidGlass<HTMLElement>(GLASS_WELCOME_BAR);
 
   useEffect(() => {
-    const logoEl = document.querySelector<HTMLElement>('a[aria-label="Gymodoro Home"]');
-
-    function handleScroll() {
-      if (!logoEl) return;
-      setPastLogo(logoEl.getBoundingClientRect().bottom <= 0);
-    }
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 48);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
-    <>
-      <header
-        className={`fixed z-40 w-[calc(100%-2rem)] max-w-3xl rounded-full border border-border/40 bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300 ${
-          pastLogo ? "top-4 left-1/2 -translate-x-1/2" : "top-[51px] left-[calc(50vw-297px)]"
-        }`}
-      >
-        <div className="px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-          <a
-            href="#why"
-            className="transition-colors hover:text-foreground hover:-translate-y-0.5 transform duration-150"
-          >
-            Why Gymodoro
-          </a>
-          <a
-            href="#loop"
-            className="transition-colors hover:text-foreground hover:-translate-y-0.5 transform duration-150"
-          >
-            The Loop
-          </a>
-          <a
-            href="#features"
-            className="transition-colors hover:text-foreground hover:-translate-y-0.5 transform duration-150"
-          >
-            Features
-          </a>
+    <header
+      ref={scrolled ? glassRef : undefined}
+      className={`fixed inset-x-0 top-0 z-40 transition-colors duration-300 ${
+        scrolled
+          ? "glass-clear border-b border-white/10"
+          : "border-b border-transparent bg-transparent"
+      }`}
+    >
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <a
+          href="#top"
+          aria-label="Gymodoro Home"
+          className="flex items-center gap-2 text-white [text-shadow:0_1px_8px_rgba(0,0,0,0.45)]"
+        >
+          <img src={logo} alt="" className="h-9 w-9 object-contain" />
+          <span className="font-poppins text-lg font-extrabold tracking-wide">GYMODORO</span>
+        </a>
+
+        <nav className="hidden items-center gap-8 text-sm font-medium text-white/75 md:flex">
+          {LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              className="transition-colors hover:text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]"
+            >
+              {l.label}
+            </a>
+          ))}
         </nav>
 
-        {/* Nav Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Link
             to="/signin"
-            className="text-sm font-semibold px-4 py-2 rounded-full text-foreground transition-all duration-200 hover:text-primary hover:-translate-y-0.5"
+            className="rounded-full px-4 py-2 text-sm font-semibold text-white/90 transition hover:text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]"
           >
-            Sign In
+            Sign in
           </Link>
           <Link
             to="/signup"
-            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold bg-foreground text-background px-5 py-2.5 rounded-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-white/90"
           >
-            <span>Start focusing</span>
-            <span className="text-primary font-bold">↗</span>
+            Start focusing
+            <span className="text-emerald-500">↗</span>
           </Link>
         </div>
-        </div>
-      </header>
-    </>
+      </div>
+    </header>
   );
 }
