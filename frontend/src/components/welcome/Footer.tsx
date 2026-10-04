@@ -7,20 +7,21 @@ export default function Footer() {
   const glassRef = useLiquidGlass<HTMLElement>(GLASS_WELCOME_BAR);
 
   return (
-    <footer ref={glassRef} className="glass-clear border-t border-white/10 py-10 text-white">
+    <footer ref={glassRef} className="glass-clear border-t border-white/10 pt-3 text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-5 sm:flex-row">
-          <div className="flex items-center gap-3">
-            {/* The logo is oversized and absolutely positioned so it floats over the page
-                instead of stretching the footer strip. */}
-            <span className="relative block h-8 w-8">
+          <div className="flex items-center gap-3 self-end sm:self-auto">
+            {/* The artwork's transparent margins are cropped off (it is 252..779 x 50..532 of a
+                1024x581 PNG, shown at 320px wide), so the footer is exactly as tall as the logo
+                and the logo's base sits on the page's bottom edge. */}
+            <span className="block h-[151px] w-[166px] flex-none overflow-hidden">
               <img
                 src={logo}
                 alt="Gymodoro"
-                className="pointer-events-none absolute top-1/2 left-1/2 h-[320px] w-[320px] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
+                className="pointer-events-none ml-[-79px] mt-[-16px] block h-auto w-[320px] max-w-none"
               />
             </span>
-            <span className="ml-40 font-heading text-xl font-extrabold tracking-tight">Gymodoro</span>
+            <span className="font-heading text-xl font-extrabold tracking-tight">Gymodoro</span>
             <span className="ml-2 hidden text-xs text-white/70 sm:inline">— Work. Move. Repeat.</span>
           </div>
 
