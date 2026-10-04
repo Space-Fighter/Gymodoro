@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import logo from "@/assets/gymodoro-logo.png";
+import logo from "@/assets/brand/gymodoro-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { getBackgroundById } from "@/components/timer/backgrounds";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";

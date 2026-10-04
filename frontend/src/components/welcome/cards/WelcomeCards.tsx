@@ -2,12 +2,12 @@ import ComparisonClips from "./ComparisonClips";
 import ProblemSection from "./ProblemSection";
 import SolutionSection from "./SolutionSection";
 import GallerySection from "./GallerySection";
+import FactsSection from "./FactsSection";
+import ClosingCta from "./ClosingCta";
 
 /**
- * The /welcome page body: a render comparison of the two hero clips, then
- * three pinned horizontal card rows (the problem, the fix, the gallery) —
- * the first two end on a real sign-up card. Replaces the old full-bleed
- * video-scrub story.
+ * The /welcome page body: hero (tagline + the two clips), the problem, the
+ * fix, the product, the facts, then a closing call to action.
  */
 export default function WelcomeCards() {
   return (
@@ -22,6 +22,10 @@ export default function WelcomeCards() {
       <div id="gallery">
         <GallerySection />
       </div>
+      <div id="facts">
+        <FactsSection />
+      </div>
+      <ClosingCta />
     </div>
   );
 }

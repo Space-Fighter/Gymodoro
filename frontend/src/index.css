@@ -145,22 +145,31 @@
    these classes are the tint/specular-highlight/shadow that make the
    refracted rim actually read as glass instead of an invisible filter. */
 .glass {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.3));
+  background: linear-gradient(180deg, var(--glass-panel-tint-top, rgba(255, 255, 255, 0.1)), var(--glass-panel-tint-bottom, rgba(0, 0, 0, 0.3)));
   box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.45),
-    inset 0 1px 1px rgba(255, 255, 255, 0.35),
+    0 20px 50px var(--glass-panel-shadow, rgba(0, 0, 0, 0.45)),
+    inset 0 1px 1px var(--glass-panel-highlight, rgba(255, 255, 255, 0.35)),
     inset 0 -6px 18px rgba(255, 255, 255, 0.05),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    inset 0 0 0 1px var(--glass-panel-rim, rgba(255, 255, 255, 0.12));
 }
 
 /* Lighter dressing for small interactive elements (buttons, pills, dropdown
    toggles) — the full .glass shadow reads as too heavy at that scale. */
 .glass-tight {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.22));
+  background: linear-gradient(180deg, var(--glass-tight-tint-top, rgba(255, 255, 255, 0.14)), var(--glass-tight-tint-bottom, rgba(0, 0, 0, 0.22)));
   box-shadow:
-    0 8px 20px rgba(0, 0, 0, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.4),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+    0 8px 20px var(--glass-tight-shadow, rgba(0, 0, 0, 0.35)),
+    inset 0 1px 1px var(--glass-tight-highlight, rgba(255, 255, 255, 0.4)),
+    inset 0 0 0 1px var(--glass-tight-rim, rgba(255, 255, 255, 0.14));
+}
+
+/* Nearly see-through bars (welcome navbar + footer): the refraction rim does the work. */
+.glass-clear {
+  background: linear-gradient(180deg, var(--glass-clear-tint-top, rgba(255, 255, 255, 0.05)), var(--glass-clear-tint-bottom, rgba(255, 255, 255, 0.01)));
+  box-shadow:
+    0 8px 24px var(--glass-clear-shadow, rgba(0, 0, 0, 0.18)),
+    inset 0 1px 1px var(--glass-clear-highlight, rgba(255, 255, 255, 0.45)),
+    inset 0 0 0 1px var(--glass-clear-rim, rgba(255, 255, 255, 0.2));
 }
 
 /* liquid-glass.js adds this class itself on Safari/Firefox, where it falls
@@ -224,3 +233,4 @@
 .glass-scrollbar::-webkit-scrollbar-corner {
   background: transparent;
 }
+

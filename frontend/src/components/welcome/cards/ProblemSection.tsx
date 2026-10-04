@@ -12,22 +12,22 @@ interface Beat {
 const BEATS: Beat[] = [
   {
     title: "Work a ton",
-    copy: "Whether you are a student studying or a working professional, most of your day goes on the desk.",
+    copy: "Student or professional, most of your day goes on the desk.",
     image: STORY_ASSETS.problemWorkATon,
   },
   {
     title: "Tired takes a break",
-    copy: "The easiest break? Pick up your phone and scroll. Just a few minutes, you say to yourself.",
+    copy: "The easiest break? Your phone. Just a few minutes, you tell yourself.",
     image: STORY_ASSETS.problemTiredBreak,
   },
   {
     title: "Your brain is hacked",
-    copy: "Oh! You've scrolled a lot — you need to get back to work.",
+    copy: "You've scrolled a lot. Time to get back to work.",
     image: STORY_ASSETS.problemBrainHacked,
   },
   {
     title: "The doom-scroll aftermath",
-    copy: "Oh well, I feel like a piece of crap now. We'll work tomorrow.",
+    copy: "I feel awful now. We'll work tomorrow.",
     image: STORY_ASSETS.problemDoomscroll,
   },
 ];
@@ -40,15 +40,15 @@ function BeatCard({ beat }: { beat: Beat }) {
       <span
         role="img"
         aria-label={beat.image.alt}
-        className="block aspect-4/3 rounded-[18px] bg-[#141824] bg-cover bg-center"
+        className="block aspect-video rounded-[18px] bg-[#141824] bg-cover bg-center"
         style={{
           backgroundImage: beat.image.src ? `url(${beat.image.src})` : undefined,
         }}
       />
-      <h3 className="m-0 font-heading text-[27px] leading-[1.05] font-extrabold tracking-[-0.01em] text-white">
+      <h3 className="m-0 font-heading text-[40px] leading-[1.05] font-extrabold tracking-[-0.01em] text-white">
         {beat.title}
       </h3>
-      <p className="m-0 text-base leading-[1.55] text-white">{beat.copy}</p>
+      <p className="m-0 text-[24px] leading-[1.35] text-white">{beat.copy}</p>
     </GlassArticle>
   );
 }
@@ -56,10 +56,10 @@ function BeatCard({ beat }: { beat: Beat }) {
 function AssessmentCard() {
   return (
     <GlassArticle className="w-[clamp(280px,32vw,400px)] text-white">
-      <h3 className="m-0 font-heading text-[31px] leading-none font-extrabold tracking-[-0.02em] uppercase">
+      <h3 className="m-0 font-heading text-[46px] leading-none font-extrabold tracking-[-0.02em] uppercase">
         Assessment of the day
       </h3>
-      <dl className="m-0 flex flex-col gap-3 font-heading text-[19px] font-bold tracking-[0.01em]">
+      <dl className="m-0 flex flex-col gap-3 font-heading text-[28px] font-bold tracking-[0.01em]">
         {ASSESSMENT_ROWS.map((label) => (
           <div
             key={label}
@@ -70,8 +70,8 @@ function AssessmentCard() {
           </div>
         ))}
       </dl>
-      <p className="mt-auto text-[15px] leading-[1.55] text-white">
-        Over the long run this can all be detrimental to health, work satisfaction, enjoyment and much more.
+      <p className="mt-auto text-[22px] leading-[1.35] text-white">
+        Over time this hurts your health, satisfaction and enjoyment.
       </p>
     </GlassArticle>
   );

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import type { ChangeEvent, MouseEvent } from "react";
 import { Check, Plus, X, Loader2 } from "lucide-react";
-import { backgrounds } from "@/components/timer/backgrounds";
+import { backgrounds, getThumbnailUrl } from "@/components/timer/backgrounds";
 import {
   addCustomBackground,
   getCustomBackgrounds,
@@ -75,7 +75,7 @@ export default function BackgroundView({ contentLeft, selectedId, onSelect }: Pr
                   ? "border-white shadow-[0_0_0_3px_rgba(255,255,255,0.35)]"
                   : "border-white/30 hover:border-white/60"
               }`}
-              style={{ backgroundImage: `url(${bg.imageUrl})` }}
+              style={{ backgroundImage: `url(${getThumbnailUrl(bg.imageUrl)})` }}
             >
               <div className="absolute inset-0 bg-black/25 rounded-[10px]" />
               {isSelected && (

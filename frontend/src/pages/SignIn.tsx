@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import logo from "@/assets/gymodoro-logo.png";
+import logo from "@/assets/brand/gymodoro-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
 import { getBackgroundById } from "@/components/timer/backgrounds";

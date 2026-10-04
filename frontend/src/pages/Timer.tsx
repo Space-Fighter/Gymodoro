@@ -10,14 +10,18 @@ import WorkoutLibrary from "@/components/timer/WorkoutLibrary";
 import BackgroundView from "@/components/timer/BackgroundView";
 import SettingsView from "@/components/timer/SettingsView";
 import { useExercises } from "@/hooks/useExercises";
-import { getBackgroundById, DEFAULT_BACKGROUND_ID } from "@/components/timer/backgrounds";
+import {
+  getBackgroundById,
+  DEFAULT_BACKGROUND_ID,
+  DEFAULT_BACKGROUND_POSITION,
+} from "@/components/timer/backgrounds";
 import StatsView from "@/components/stats/StatsView";
 import { playAlarmChime, scheduleAlarmChime } from "@/lib/chime";
 import { getAutoStartBreaksEnabled } from "@/lib/timerSettings";
 import { useTimerPopout } from "@/hooks/useTimerPopout";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 import { GLASS_TIGHT } from "@/lib/glassPresets";
-import logo from "@/assets/gymodoro-logo.png";
+import logo from "@/assets/brand/gymodoro-logo.png";
 
 const BACKGROUND_STORAGE_KEY = "gymodoro-background";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -483,7 +487,8 @@ export default function Timer({
         style={{
           backgroundImage: `url("${getBackgroundById(backgroundId).imageUrl}")`,
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition:
+            getBackgroundById(backgroundId).position ?? DEFAULT_BACKGROUND_POSITION,
         }}
       />
 

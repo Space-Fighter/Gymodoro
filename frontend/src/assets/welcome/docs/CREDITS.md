@@ -21,9 +21,9 @@ the product (About page or footer):
   notification sound sliced from the first clip's audio. `cta-bg.webp` is the
   last frame of `solution-scrub.mp4`.
 - **`features-scrub.mp4` is not delivered yet** — Part 3 shows `features-poster`
-  until it lands. Drop the raw clip in `frontend/src/assets/videos/` and re-run
+  until it lands. Drop the raw clip in `frontend/src/assets/welcome/hero/source/` and re-run
   the same encode (see the `ffmpeg` line pattern used for the other two).
 
 ## Character reference
 
-- `character-ref.png` — user-supplied (`frontend/src/assets/man.png`).
+- `character-ref.png` — user-supplied (`frontend/src/assets/brand/man.png`).

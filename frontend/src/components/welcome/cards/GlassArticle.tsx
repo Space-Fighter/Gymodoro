@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
-import { GLASS_PANEL } from "@/lib/glassPresets";
+import { GLASS_WELCOME_CARD } from "@/lib/glassPresets";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,7 +20,7 @@ export default function GlassArticle({
   children: ReactNode;
   className?: string;
 }) {
-  const ref = useLiquidGlass<HTMLElement>({ ...GLASS_PANEL, radius: 26 });
+  const ref = useLiquidGlass<HTMLElement>({ ...GLASS_WELCOME_CARD, radius: 26 });
   return (
     <article
       ref={ref}

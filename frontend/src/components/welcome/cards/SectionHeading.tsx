@@ -28,8 +28,8 @@ export default function SectionHeading({
         <div className="relative h-px min-w-[60px] flex-1 overflow-hidden bg-[#1b1f2b]">
           <div
             ref={fillRef}
-            className="absolute inset-y-0 left-0 w-0"
-            style={{ background: fillColor }}
+            className="absolute inset-0 origin-left"
+            style={{ background: fillColor, transform: "scaleX(0)" }}
           />
         </div>
       </div>
