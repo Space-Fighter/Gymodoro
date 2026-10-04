@@ -45,7 +45,9 @@ export function useTimerPopout({
   // Latest handlers, so the listeners bound once on the PiP buttons always
   // call through to the current closures.
   const handlersRef = useRef({ onToggleStart, onReset });
-  handlersRef.current = { onToggleStart, onReset };
+  useEffect(() => {
+    handlersRef.current = { onToggleStart, onReset };
+  });
 
   const supported =
     typeof window !== "undefined" && "documentPictureInPicture" in window;

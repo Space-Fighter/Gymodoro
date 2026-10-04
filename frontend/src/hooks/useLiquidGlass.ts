@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import "@/lib/liquid-glass.js";
 
 export interface LiquidGlassOptions {
@@ -49,7 +49,10 @@ declare global {
 export function useLiquidGlass<T extends HTMLElement>(opts?: LiquidGlassOptions) {
   const instanceRef = useRef<LiquidGlassInstance | null>(null);
   const optsRef = useRef(opts);
-  optsRef.current = opts;
+  // Kept current after each render; the callback ref below only reads it at attach time.
+  useEffect(() => {
+    optsRef.current = opts;
+  });
 
   return useCallback((node: T | null) => {
     instanceRef.current?.destroy();
