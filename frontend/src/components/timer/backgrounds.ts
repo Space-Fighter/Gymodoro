@@ -323,7 +323,8 @@ export function getThumbnailUrl(imageUrl: string): string {
  */
 export const DEFAULT_BACKGROUND_POSITION = "center 85%";
 
-export const DEFAULT_BACKGROUND_ID = "desert-sunset-drive";
+// What a first-time visitor sees until they pick their own wallpaper (a saved choice always wins).
+export const DEFAULT_BACKGROUND_ID = "santorini-domes";
 
 export function getBackgroundById(id: string): Background {
   const preset = backgrounds.find((bg) => bg.id === id);

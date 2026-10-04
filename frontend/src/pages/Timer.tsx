@@ -16,7 +16,7 @@ import {
   DEFAULT_BACKGROUND_POSITION,
 } from "@/components/timer/backgrounds";
 import StatsView from "@/components/stats/StatsView";
-import { playAlarmChime, scheduleAlarmChime } from "@/lib/chime";
+import { playAlarmChime, preloadRingSound, scheduleAlarmChime } from "@/lib/chime";
 import { getAutoStartBreaksEnabled } from "@/lib/timerSettings";
 import { useTimerPopout } from "@/hooks/useTimerPopout";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
@@ -75,6 +75,11 @@ export default function Timer({
   const deadlineRef = useRef<number | null>(null);
   // Cancels the chime pre-scheduled on the audio clock for the current run.
   const cancelChimeRef = useRef<(() => void) | null>(null);
+
+  // Fetch + decode the chosen ring now so it can fire the instant a phase ends.
+  useEffect(() => {
+    preloadRingSound();
+  }, []);
   // Number of focus sessions completed so far this cycle — every 4th one
   // triggers a long break instead of a short one (see getNextTimerMode).
   const focusCountRef = useRef(0);
@@ -276,7 +281,7 @@ export default function Timer({
     // backgrounded and JS timers freeze.
     if (deadlineRef.current !== null) {
       const secsLeft = Math.max(0, (deadlineRef.current - Date.now()) / 1000);
-      cancelChimeRef.current = scheduleAlarmChime(isFocusMode, secsLeft);
+      cancelChimeRef.current = scheduleAlarmChime(secsLeft);
     }
 
     timerInterval.current = setInterval(syncFromDeadline, 250);
@@ -320,7 +325,7 @@ export default function Timer({
     // later genuine user action (Play, pause, switch mode, reset) still ends
     // it early, same as before.
     if (!cancelChimeRef.current) {
-      cancelChimeRef.current = playAlarmChime(isFocusMode);
+      cancelChimeRef.current = playAlarmChime();
     }
 
     // finishNow (the ">" skip-to-end button) forces `remaining` to 0 to
@@ -387,7 +392,7 @@ export default function Timer({
     // useEffect can fall outside that window and get silently blocked. The
     // completion effect's own `if (!cancelChimeRef.current)` guard then sees
     // this is already set and skips re-triggering it.
-    cancelChimeRef.current = playAlarmChime(isFocusMode);
+    cancelChimeRef.current = playAlarmChime();
     finishEarlyMinutesRef.current = (currentMode.duration * 60 - remaining) / 60;
     suppressAutoStartRef.current = true;
     // If the timer was paused, this call's own setRunning(true) below flips
@@ -400,7 +405,7 @@ export default function Timer({
     advancingAfterCompletionRef.current = true;
     setRemaining(0);
     setRunning(true);
-  }, [currentMode.duration, remaining, isFocusMode, cancelScheduledChime]);
+  }, [currentMode.duration, remaining, cancelScheduledChime]);
 
   const toggleStart = useCallback(() => {
     const next = !running;
@@ -454,7 +459,7 @@ export default function Timer({
       // re-schedule it for the new deadline.
       cancelScheduledChime();
       const secsLeft = Math.max(0, (deadlineRef.current - Date.now()) / 1000);
-      cancelChimeRef.current = scheduleAlarmChime(isFocusMode, secsLeft);
+      cancelChimeRef.current = scheduleAlarmChime(secsLeft);
     }
   };
 

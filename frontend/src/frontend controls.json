@@ -24,7 +24,7 @@
     "panel": {
       "refraction": true,
       "scale": -70,
-      "chroma": 15,
+      "chroma": 8,
       "mapBlur": 18,
       "blur": 5,
       "saturate": 1.4

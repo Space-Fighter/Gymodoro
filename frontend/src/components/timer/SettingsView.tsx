@@ -1,7 +1,19 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Play, Square } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { getSoundEffectsEnabled, setSoundEffectsEnabled, playChime } from "@/lib/chime";
+import {
+  getSoundEffectsEnabled,
+  setSoundEffectsEnabled,
+  RING_SOUNDS,
+  getRingSoundId,
+  RING_SECONDS_OPTIONS,
+  getRingSeconds,
+  setRingSeconds,
+  setRingSoundId,
+  preloadRingSound,
+  previewRingSound,
+} from "@/lib/chime";
 import { getAutoStartBreaksEnabled, setAutoStartBreaksEnabled } from "@/lib/timerSettings";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 import { GLASS_PANEL } from "@/lib/glassPresets";
@@ -16,13 +28,44 @@ export default function SettingsView({ contentLeft }: Props) {
   const [autoStart, setAutoStart] = useState(getAutoStartBreaksEnabled);
   const [notifications, setNotifications] = useState(true);
   const [soundEffects, setSoundEffects] = useState(getSoundEffectsEnabled);
+  const [ringId, setRingId] = useState(getRingSoundId);
+  const [ringSeconds, setRingSecondsState] = useState(getRingSeconds);
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
+  const stopPreviewRef = useRef<(() => void) | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const autoStartGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
   const notificationsGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
   const soundGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
+  const ringGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
   const userInfoGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
+
+  // Stop any preview still playing when leaving Settings.
+  useEffect(() => () => stopPreviewRef.current?.(), []);
+
+  const stopPreview = () => {
+    stopPreviewRef.current?.();
+    stopPreviewRef.current = null;
+    setPreviewingId(null);
+  };
+
+  const togglePreview = (id: string) => {
+    const wasPlaying = previewingId === id;
+    stopPreview();
+    if (wasPlaying) return;
+    setPreviewingId(id);
+    stopPreviewRef.current = previewRingSound(id, () => {
+      stopPreviewRef.current = null;
+      setPreviewingId((cur) => (cur === id ? null : cur));
+    });
+  };
+
+  const selectRing = (id: string) => {
+    setRingId(id);
+    setRingSoundId(id);
+    preloadRingSound(id);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -113,7 +156,6 @@ export default function SettingsView({ contentLeft }: Props) {
               const next = !soundEffects;
               setSoundEffects(next);
               setSoundEffectsEnabled(next);
-              if (next) playChime(true); // preview so the toggle isn't silent-until-trusted
             }}
             className={`w-10 h-6 rounded-full transition-colors ${
               soundEffects ? "bg-emerald-500" : "bg-white/20"
@@ -125,6 +167,81 @@ export default function SettingsView({ contentLeft }: Props) {
               }`}
             />
           </button>
+        </div>
+
+        {/* Timer ring sound */}
+        <div
+          ref={ringGlassRef}
+          className="glass px-4 py-3.5 rounded-2xl border border-white/10"
+        >
+          <span className="text-sm text-white/80 font-poppins">Timer ring sound</span>
+          <ul className="mt-3 space-y-1.5" role="radiogroup" aria-label="Timer ring sound">
+            {RING_SOUNDS.map((sound) => {
+              const selected = ringId === sound.id;
+              const playing = previewingId === sound.id;
+              return (
+                <li
+                  key={sound.id}
+                  className={`flex items-center gap-3 rounded-xl border px-3 py-2 transition-colors ${
+                    selected ? "border-emerald-400/60 bg-emerald-500/15" : "border-white/10 bg-white/5"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => selectRing(sound.id)}
+                    className="flex flex-1 items-center gap-3 text-left"
+                  >
+                    <span
+                      className={`flex h-4 w-4 flex-none items-center justify-center rounded-full border ${
+                        selected ? "border-emerald-400" : "border-white/40"
+                      }`}
+                    >
+                      {selected && <span className="h-2 w-2 rounded-full bg-emerald-400" />}
+                    </span>
+                    <span className="text-sm text-white font-poppins">{sound.label}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => togglePreview(sound.id)}
+                    aria-label={`${playing ? "Stop" : "Preview"} ${sound.label}`}
+                    className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                  >
+                    {playing ? <Square className="h-3.5 w-3.5" fill="currentColor" /> : <Play className="h-3.5 w-3.5" fill="currentColor" />}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="mt-4 border-t border-white/10 pt-3">
+            <span className="text-sm text-white/80 font-poppins">Ring for</span>
+            <div className="mt-2 grid grid-cols-5 gap-1.5" role="radiogroup" aria-label="How long the timer rings">
+              {RING_SECONDS_OPTIONS.map((secs) => {
+                const selected = ringSeconds === secs;
+                return (
+                  <button
+                    key={secs}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => {
+                      stopPreview();
+                      setRingSecondsState(secs);
+                      setRingSeconds(secs);
+                    }}
+                    className={`rounded-lg border py-2 text-sm font-poppins transition-colors ${
+                      selected
+                        ? "border-emerald-400/60 bg-emerald-500/15 text-white"
+                        : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+                    }`}
+                  >
+                    {secs < 60 ? `${secs}s` : "1 min"}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
