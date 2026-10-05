@@ -33,6 +33,8 @@ export default function SettingsView({ contentLeft }: Props) {
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const stopPreviewRef = useRef<(() => void) | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const autoStartGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
@@ -74,9 +76,12 @@ export default function SettingsView({ contentLeft }: Props) {
 
   const handleDeleteAccount = async () => {
     setDeleting(true);
+    setDeleteError(null);
     try {
-      await deleteAccount();
+      await deleteAccount(deleteConfirm);
       navigate("/welcome");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Account deletion failed");
     } finally {
       setDeleting(false);
     }
@@ -285,9 +290,22 @@ export default function SettingsView({ contentLeft }: Props) {
             <p className="text-sm text-red-200 font-semibold">
               Are you sure? This will permanently delete your account.
             </p>
+            <input
+              type="password"
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder="Your password (Google account: type your email)"
+              autoComplete="current-password"
+              className="w-full rounded-lg border border-red-500/40 bg-black/30 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-red-400"
+            />
+            {deleteError && <p className="text-sm text-red-300">{deleteError}</p>}
             <div className="flex gap-2">
               <button
-                onClick={() => setConfirmingDelete(false)}
+                onClick={() => {
+                  setConfirmingDelete(false);
+                  setDeleteConfirm("");
+                  setDeleteError(null);
+                }}
                 disabled={deleting}
                 className="flex-1 px-4 py-2.5 rounded-lg border border-white/20 text-white/80 hover:bg-white/10 font-semibold transition-colors disabled:opacity-50"
               >
@@ -295,7 +313,7 @@ export default function SettingsView({ contentLeft }: Props) {
               </button>
               <button
                 onClick={handleDeleteAccount}
-                disabled={deleting}
+                disabled={deleting || !deleteConfirm}
                 className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors disabled:opacity-50"
               >
                 {deleting ? "Deleting..." : "Yes, delete"}

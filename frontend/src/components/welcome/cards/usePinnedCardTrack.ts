@@ -28,7 +28,6 @@ export function usePinnedCardTrack() {
   const trackRef = useRef<HTMLDivElement>(null);
   const fillRef = useRef<HTMLDivElement>(null);
   const calm = useCalm();
-  const simple = calm;
   const phone = useSyncExternalStore(subscribePhone, getPhone, () => false);
 
   useEffect(() => {
@@ -46,7 +45,7 @@ export function usePinnedCardTrack() {
       return;
     }
 
-    if (simple) {
+    if (calm) {
       section.style.height = "auto";
       track.style.transform = "";
       viewport.style.overflowX = "auto";
@@ -101,7 +100,7 @@ export function usePinnedCardTrack() {
       ro.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [simple, phone]);
+  }, [calm, phone]);
 
   return { sectionRef, trackRef, fillRef };
 }

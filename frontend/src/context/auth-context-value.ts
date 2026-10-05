@@ -18,7 +18,7 @@ export interface AuthContextType {
   resetPassword: (token: string, password: string) => Promise<{ message: string }>;
   googleLogin: (idToken: string, mode: "login" | "signup") => Promise<void>;
   logout: () => Promise<void>;
-  deleteAccount: () => Promise<void>;
+  deleteAccount: (confirm: string) => Promise<void>;
   checkAuth: () => Promise<void>;
   getAccessToken: () => string | null;
 }

@@ -2,9 +2,8 @@ import { useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "@/assets/brand/gymodoro-logo.png";
 import { useAuth } from "@/hooks/useAuth";
-import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 import { getBackgroundById } from "@/components/timer/backgrounds";
-import GoogleIcon from "@/components/GoogleIcon";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 import { GLASS_PANEL, GLASS_TIGHT } from "@/lib/glassPresets";
 
@@ -57,8 +56,6 @@ export default function SignUp() {
     },
     [googleLogin, navigate]
   );
-
-  const { promptGoogleSignIn } = useGoogleSignIn(handleGoogleCredential);
 
   const cardGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
   const dividerGlassRef = useLiquidGlass<HTMLSpanElement>(GLASS_TIGHT);
@@ -224,15 +221,7 @@ export default function SignUp() {
 
               {/* Alternative Auth Buttons */}
               <div className="space-y-2.5">
-                <button
-                  type="button"
-                  onClick={promptGoogleSignIn}
-                  disabled={isLoading}
-                  className="w-full py-2.5 px-4 rounded-lg border border-border hover:border-emerald-500/60 bg-background/50 hover:bg-secondary text-foreground text-sm font-medium flex items-center justify-center gap-3 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <GoogleIcon className="w-4 h-4" />
-                  <span>Sign up with Google</span>
-                </button>
+                <GoogleSignInButton onCredential={handleGoogleCredential} text="signup_with" disabled={isLoading} />
               </div>
 
               <div className="text-center mt-8 text-sm text-muted-foreground">

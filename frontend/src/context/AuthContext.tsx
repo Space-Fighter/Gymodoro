@@ -220,8 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        // ID tokens are JWTs (3 dot-separated parts); popup-flow access tokens are not.
-        body: JSON.stringify(idToken.split(".").length === 3 ? { idToken, mode } : { accessToken: idToken, mode }),
+        body: JSON.stringify({ idToken, mode }),
       });
 
       const data = await response.json();
@@ -256,21 +255,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const deleteAccount = useCallback(async () => {
+  // `confirm` is the account password (or the email, for Google-only accounts);
+  // the backend refuses to delete without it. State is cleared only on success,
+  // so a wrong password doesn't log the user out.
+  const deleteAccount = useCallback(async (confirm: string) => {
     try {
       setIsLoading(true);
       const response = await fetch(`${API_URL}/api/auth/account`, {
         method: "DELETE",
         credentials: "include",
-        headers: { Authorization: `Bearer ${accessTokenRef.current}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessTokenRef.current}`,
+        },
+        body: JSON.stringify({ confirm }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.message || data.error || "Account deletion failed");
       }
-    } finally {
       accessTokenRef.current = null;
       setUser(null);
+    } finally {
       setIsLoading(false);
     }
   }, []);

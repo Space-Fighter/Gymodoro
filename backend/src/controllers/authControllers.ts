@@ -19,6 +19,14 @@ if (!rawJwtSecret) {
 // `string` right after the check above, but that narrowing doesn't survive
 // inside functions defined later in this file — this constant carries it.
 const JWT_SECRET: string = rawJwtSecret;
+if (process.env.NODE_ENV === 'production' && JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET is too short for production (use at least 32 random characters).');
+}
+
+// Access and refresh tokens share one secret, so each carries a `type` claim
+// and is only accepted where that type is expected. Otherwise a long-lived
+// refresh token could be replayed as an access token on the API.
+const JWT_ALGORITHM = 'HS256' as const;
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 // verify-email is a backend JSON endpoint with no frontend page behind it,
@@ -58,11 +66,11 @@ function hashToken(rawToken: string) {
 }
 
 function signAccessToken(userId: string) {
-  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '15m' });
+  return jwt.sign({ id: userId, type: 'access' }, JWT_SECRET, { expiresIn: '15m', algorithm: JWT_ALGORITHM });
 }
 
 function signRefreshToken(userId: string) {
-  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id: userId, type: 'refresh' }, JWT_SECRET, { expiresIn: '7d', algorithm: JWT_ALGORITHM });
 }
 
 function setRefreshCookie(res: Response, token: string) {
@@ -534,36 +542,24 @@ export async function login(req: Request, res: Response) {
 // This avoids a server-side redirect dance and fits your stateless JWT setup.
 export async function googleLogin(req: Request, res: Response) {
   try {
-    const { idToken, accessToken: googleAccessToken, mode } = req.body;
-    if (!idToken && !googleAccessToken) {
+    // Accept the token as `idToken` (our frontend) or `credential` (the field
+    // Google's own client library uses), so either spelling works.
+    const { mode } = req.body;
+    const idToken: unknown = req.body.idToken ?? req.body.credential;
+    if (typeof idToken !== 'string' || !idToken) {
       return res.status(400).json({ message: 'Google ID token is required.' });
     }
     if (mode !== 'login' && mode !== 'signup') {
       return res.status(400).json({ message: 'A valid mode ("login" or "signup") is required.' });
     }
 
-    let payload: { email?: string; email_verified?: boolean; name?: string; sub?: string } | undefined;
-    if (idToken) {
-      const ticket = await googleClient.verifyIdToken({
-        idToken,
-        audience: GOOGLE_CLIENT_ID,
-      });
-      payload = ticket.getPayload();
-    } else {
-      // Popup (token client) flow: the access token must have been issued to
-      // *our* client, otherwise any app's token could be replayed here.
-      const info = await googleClient.getTokenInfo(googleAccessToken);
-      if (info.aud !== GOOGLE_CLIENT_ID) {
-        return res.status(401).json({ message: 'Invalid Google token.' });
-      }
-      const profileRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${googleAccessToken}` },
-      });
-      if (!profileRes.ok) {
-        return res.status(401).json({ message: 'Invalid Google token.' });
-      }
-      payload = (await profileRes.json()) as typeof payload;
-    }
+    // verifyIdToken checks the signature against Google's public keys, the
+    // expiry, and that `aud` is exactly our client ID. It throws on any failure.
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
 
     if (!payload || !payload.email || !payload.sub) {
       return res.status(401).json({ message: 'Invalid Google token.' });
@@ -647,7 +643,10 @@ export async function getMe(req: Request, res: Response) {
       return res.status(401).json({ message: 'Token not found/provided.' });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: [JWT_ALGORITHM] }) as { id: string; type?: string };
+    if (decoded.type !== 'access') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
@@ -679,9 +678,14 @@ export async function refreshToken(req: Request, res: Response) {
     }
 
     // 1. Verify signature + expiry of the JWT itself.
-    let decoded: { id: string };
+    let decoded: { id: string; type?: string };
     try {
-      decoded = jwt.verify(incomingToken, JWT_SECRET) as { id: string };
+      decoded = jwt.verify(incomingToken, JWT_SECRET, { algorithms: [JWT_ALGORITHM] }) as { id: string; type?: string };
+      // Tokens issued before the `type` claim existed have none; accept those
+      // here only (they expire within 7 days) but never an access token.
+      if (decoded.type !== undefined && decoded.type !== 'refresh') {
+        throw new jwt.JsonWebTokenError('wrong token type');
+      }
     } catch (err) {
       clearRefreshCookie(res);
       if (err instanceof jwt.TokenExpiredError) {
@@ -762,6 +766,23 @@ export async function logout(req: Request, res: Response) {
 
 export async function deleteAccount(req: Request, res: Response) {
   try {
+    // A valid access token alone isn't enough to destroy an account: re-check
+    // the password, or (Google-only accounts have no password) the email.
+    const confirm: unknown = req.body?.confirm;
+    if (typeof confirm !== 'string' || !confirm) {
+      return res.status(400).json({ message: 'Please confirm with your password (or your email for Google accounts).' });
+    }
+    const account = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!account) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    const confirmed = account.password
+      ? await bcrypt.compare(confirm, account.password)
+      : confirm.trim().toLowerCase() === account.email.toLowerCase();
+    if (!confirmed) {
+      return res.status(403).json({ message: 'Confirmation did not match. Account was not deleted.' });
+    }
+
     // RefreshToken and Session rows cascade-delete with the User
     // (onDelete: Cascade in schema.prisma), so no manual cleanup needed.
     await prisma.user.delete({ where: { id: req.userId } });

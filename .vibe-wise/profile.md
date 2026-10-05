@@ -1,21 +1,20 @@
 # Learner Profile
 
 Learning mode: active
-Onboarding: incomplete
-Remaining onboarding: codebase familiarity, learning scope, programming experience, stack familiarity, goal, preferences
+Onboarding: complete
 
 ## Project
 Situation: Existing
 Building: Gymodoro — Pomodoro timer with exercise breaks (see project-map.md)
-Codebase familiarity: Not specified
-Learning scope: Not specified
+Codebase familiarity: A little experience
+Learning scope: Parts we touch
 
 ## Experience
-Overall programming: Not specified
-Stack familiarity: Not specified
+Overall programming: Beginner
+Stack familiarity: Beginner
 
 ## Goals
-Primary: Not specified
+Primary: Current task — revert Google sign-in to ID tokens, fix frontend init bugs, add Helmet + rate limiting (stated in the request; not a learning goal)
 Capability goal: Not specified
 
 ## Preferences

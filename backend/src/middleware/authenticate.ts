@@ -28,8 +28,8 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
       return res.status(401).json({ message: 'Access token missing.' });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-    if (!decoded || !decoded.id) {
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as { id: string; type?: string };
+    if (!decoded || !decoded.id || decoded.type !== 'access') {
       return res.status(401).json({ message: 'Invalid token payload.' });
     }
 

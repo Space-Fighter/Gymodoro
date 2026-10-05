@@ -1,8 +1,7 @@
 import { useCallback, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
-import GoogleIcon from "@/components/GoogleIcon";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 import GlassArticle from "./GlassArticle";
 import PinnedRow from "./PinnedRow";
 import { assetUrl, STORY_ASSETS, type StoryAsset } from "../assets";
@@ -140,7 +139,6 @@ function SignUpCard() {
     },
     [googleLogin],
   );
-  const { promptGoogleSignIn } = useGoogleSignIn(onCredential);
 
   return (
     <FixCard
@@ -151,14 +149,7 @@ function SignUpCard() {
       <p className={BODY}>One focus block. One real break.</p>
       {err && <p className="m-0 rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">{err}</p>}
       <div className="mt-auto flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={promptGoogleSignIn}
-          className="flex items-center justify-center gap-2.5 rounded-lg bg-white px-4 py-3 text-[19px] font-bold text-[#07080d] max-md:text-[16px]"
-        >
-          <GoogleIcon className="h-5 w-5" />
-          Continue with Google
-        </button>
+        <GoogleSignInButton onCredential={onCredential} text="continue_with" theme="outline" />
         <Link
           to="/signup"
           className="rounded-lg border border-white/40 px-4 py-3 text-center text-[19px] max-md:text-[16px] font-bold text-white"
