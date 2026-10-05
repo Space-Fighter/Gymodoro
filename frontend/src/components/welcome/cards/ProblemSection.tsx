@@ -36,7 +36,7 @@ const ASSESSMENT_ROWS = ["Productivity", "Enjoyment", "Satisfaction", "Activenes
 
 function BeatCard({ beat }: { beat: Beat }) {
   return (
-    <GlassArticle className="w-[clamp(260px,30vw,360px)]">
+    <GlassArticle className="w-[clamp(260px,30vw,360px)] max-md:w-[78vw]">
       <span
         role="img"
         aria-label={beat.image.alt}
@@ -45,21 +45,21 @@ function BeatCard({ beat }: { beat: Beat }) {
           backgroundImage: beat.image.src ? `url(${beat.image.src})` : undefined,
         }}
       />
-      <h3 className="m-0 font-heading text-[40px] leading-[1.05] font-extrabold tracking-[-0.01em] text-white">
+      <h3 className="m-0 font-heading text-[40px] leading-[1.05] max-md:text-[28px] font-extrabold tracking-[-0.01em] text-white">
         {beat.title}
       </h3>
-      <p className="m-0 text-[24px] leading-[1.35] text-white">{beat.copy}</p>
+      <p className="m-0 text-[24px] leading-[1.35] max-md:text-[18px] text-white">{beat.copy}</p>
     </GlassArticle>
   );
 }
 
 function AssessmentCard() {
   return (
-    <GlassArticle className="w-[clamp(280px,32vw,400px)] text-white">
-      <h3 className="m-0 font-heading text-[46px] leading-none font-extrabold tracking-[-0.02em] uppercase">
+    <GlassArticle className="w-[clamp(280px,32vw,400px)] text-white max-md:w-[78vw]">
+      <h3 className="m-0 font-heading text-[46px] leading-none max-md:text-[32px] font-extrabold tracking-[-0.02em] uppercase">
         Assessment of the day
       </h3>
-      <dl className="m-0 flex flex-col gap-3 font-heading text-[28px] font-bold tracking-[0.01em]">
+      <dl className="m-0 flex flex-col gap-3 font-heading text-[28px] font-bold tracking-[0.01em] max-md:text-[20px]">
         {ASSESSMENT_ROWS.map((label) => (
           <div
             key={label}
@@ -70,7 +70,7 @@ function AssessmentCard() {
           </div>
         ))}
       </dl>
-      <p className="mt-auto text-[22px] leading-[1.35] text-white">
+      <p className="mt-auto text-[22px] leading-[1.35] max-md:text-[16px] text-white">
         Over time this hurts your health, satisfaction and enjoyment.
       </p>
     </GlassArticle>
@@ -83,15 +83,15 @@ export default function ProblemSection() {
 
   return (
     <section ref={sectionRef} className="relative">
-      <div className="sticky top-0 flex min-h-screen flex-col">
+      <div className="sticky top-0 flex min-h-screen flex-col max-md:static max-md:min-h-0 max-md:pb-8">
         <SectionHeading kicker="01 — the problem" fillRef={fillRef}>
           The problem
         </SectionHeading>
 
-        <div className="flex flex-none items-center overflow-x-hidden overflow-y-visible py-6">
+        <div className="flex flex-none items-center overflow-x-clip overflow-y-visible py-6 max-md:py-0">
           <div
             ref={trackRef}
-            className="relative flex items-start gap-[clamp(16px,2vw,28px)] px-[5vw] will-change-transform"
+            className="relative flex items-start gap-[clamp(16px,2vw,28px)] px-[5vw] will-change-transform max-md:w-full max-md:flex-col max-md:gap-5 max-md:[&>*]:!w-full"
           >
             {BEATS.map((beat) => (
               <BeatCard key={beat.title} beat={beat} />

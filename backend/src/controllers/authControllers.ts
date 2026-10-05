@@ -534,21 +534,38 @@ export async function login(req: Request, res: Response) {
 // This avoids a server-side redirect dance and fits your stateless JWT setup.
 export async function googleLogin(req: Request, res: Response) {
   try {
-    const { idToken, mode } = req.body;
-    if (!idToken) {
+    const { idToken, accessToken: googleAccessToken, mode } = req.body;
+    if (!idToken && !googleAccessToken) {
       return res.status(400).json({ message: 'Google ID token is required.' });
     }
     if (mode !== 'login' && mode !== 'signup') {
       return res.status(400).json({ message: 'A valid mode ("login" or "signup") is required.' });
     }
 
-    const ticket = await googleClient.verifyIdToken({
-      idToken,
-      audience: GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
+    let payload: { email?: string; email_verified?: boolean; name?: string; sub?: string } | undefined;
+    if (idToken) {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } else {
+      // Popup (token client) flow: the access token must have been issued to
+      // *our* client, otherwise any app's token could be replayed here.
+      const info = await googleClient.getTokenInfo(googleAccessToken);
+      if (info.aud !== GOOGLE_CLIENT_ID) {
+        return res.status(401).json({ message: 'Invalid Google token.' });
+      }
+      const profileRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${googleAccessToken}` },
+      });
+      if (!profileRes.ok) {
+        return res.status(401).json({ message: 'Invalid Google token.' });
+      }
+      payload = (await profileRes.json()) as typeof payload;
+    }
 
-    if (!payload || !payload.email) {
+    if (!payload || !payload.email || !payload.sub) {
       return res.status(401).json({ message: 'Invalid Google token.' });
     }
     // Google can, in non-standard flows, issue a token whose email claim it

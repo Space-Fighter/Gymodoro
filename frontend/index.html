@@ -3,29 +3,82 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
+
     <!-- Primary Meta Tags -->
-    <title>Gymodoro — Work. Move. Repeat.</title>
-    <meta name="title" content="Gymodoro — Work. Move. Repeat." />
-    <meta name="description" content="Gymodoro turns productivity breaks into active breaks. Combine focused Pomodoro deep work sessions with guided 5-minute movements and desk exercises." />
-    <meta name="keywords" content="pomodoro, active breaks, workout timer, study timer, productivity, desk exercise, focus timer, distraction blocker, health, wellness" />
+    <title>Gymodoro: Pomodoro Timer with Built-in Workouts | Work. Move. Repeat.</title>
+    <meta name="title" content="Gymodoro: Pomodoro Timer with Built-in Workouts | Work. Move. Repeat." />
+    <meta name="description" content="Gymodoro is a free Pomodoro focus timer that turns every break into a workout. Work in 25-minute blocks, then do a guided 5-minute exercise with video demos instead of scrolling your phone." />
+    <meta name="keywords" content="gymodoro, pomodoro timer, pomodoro workout, active breaks, exercise breaks, desk exercises, focus timer, study timer, productivity timer, stop doomscrolling" />
     <meta name="author" content="Gymodoro" />
-    <meta name="robots" content="index, follow" />
+    <meta name="application-name" content="Gymodoro" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#22c55e" />
+    <link rel="canonical" href="https://gymodoro.com/" />
 
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph / Facebook / LinkedIn -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://gymodoro.app/" />
-    <meta property="og:title" content="Gymodoro — Work. Move. Repeat." />
-    <meta property="og:description" content="Gymodoro turns productivity breaks into active breaks. Combine focused Pomodoro deep work sessions with guided 5-minute movements." />
-    <meta property="og:image" content="/gymodoro-logo.png" />
+    <meta property="og:site_name" content="Gymodoro" />
+    <meta property="og:url" content="https://gymodoro.com/" />
+    <meta property="og:title" content="Gymodoro: the focus timer that turns every break into a workout" />
+    <meta property="og:description" content="Work in 25-minute focus blocks. Spend every 5-minute break on a guided exercise instead of your phone. Free Pomodoro timer with 160+ built-in workouts." />
+    <meta property="og:image" content="https://gymodoro.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Gymodoro: a man working on his laptop in an alpine meadow, with the headline 'The focus timer that turns every break into a workout'" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://gymodoro.app/" />
-    <meta property="twitter:title" content="Gymodoro — Work. Move. Repeat." />
-    <meta property="twitter:description" content="Gymodoro turns productivity breaks into active breaks. Combine focused Pomodoro deep work sessions with guided 5-minute movements." />
-    <meta property="twitter:image" content="/gymodoro-logo.png" />
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://gymodoro.com/" />
+    <meta name="twitter:title" content="Gymodoro: the focus timer that turns every break into a workout" />
+    <meta name="twitter:description" content="Work in 25-minute focus blocks. Spend every 5-minute break on a guided exercise instead of your phone." />
+    <meta name="twitter:image" content="https://gymodoro.com/og-image.jpg" />
+
+    <!-- Structured data: tells Google and AI search engines what Gymodoro is -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://gymodoro.com/#organization",
+            "name": "Gymodoro",
+            "url": "https://gymodoro.com/",
+            "logo": "https://gymodoro.com/gymodoro-logo.png"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://gymodoro.com/#website",
+            "url": "https://gymodoro.com/",
+            "name": "Gymodoro",
+            "alternateName": ["Gymodoro Pomodoro Workout Timer", "Gymodoro app"],
+            "description": "A Pomodoro focus timer that turns every break into a workout.",
+            "publisher": { "@id": "https://gymodoro.com/#organization" },
+            "inLanguage": "en"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://gymodoro.com/#app",
+            "name": "Gymodoro",
+            "alternateName": "Gymodoro Pomodoro Workout Timer",
+            "url": "https://gymodoro.com/",
+            "image": "https://gymodoro.com/og-image.jpg",
+            "applicationCategory": "HealthApplication",
+            "applicationSubCategory": "Pomodoro timer with exercise breaks",
+            "operatingSystem": "Web browser",
+            "description": "Gymodoro is a free Pomodoro focus timer that turns every break into a workout. Work in 25-minute blocks, then do a guided 5-minute exercise with a demo video, muscle diagram and instructions, instead of doomscrolling.",
+            "featureList": [
+              "25-minute focus timer with 5-minute and 15-minute breaks",
+              "Random or chosen exercise for every break, from a library of 160+ bodyweight exercises",
+              "Demo video, muscle diagram and instructions for each exercise",
+              "Daily stats: focus time, active breaks and calories burned",
+              "Customisable timer ring sounds and scenic wallpapers"
+            ],
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "publisher": { "@id": "https://gymodoro.com/#organization" }
+          }
+        ]
+      }
+    </script>
 
     <!-- Favicon & Icons -->
     <link rel="icon" type="image/png" href="/gymodoro-logo.png" />

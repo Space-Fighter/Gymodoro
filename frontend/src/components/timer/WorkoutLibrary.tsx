@@ -119,7 +119,7 @@ export default function WorkoutLibrary({
 
   return (
     <div
-      className="absolute inset-0 overflow-y-auto p-6 pt-36"
+      className="absolute inset-0 overflow-y-auto p-6 pt-36 max-md:p-4 max-md:pt-6 max-md:pb-24"
       style={{ left: contentLeft, transition: "left 0.25s ease" }}
     >
       <div className="flex items-start justify-between mb-4">
@@ -143,7 +143,7 @@ export default function WorkoutLibrary({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search exercises..."
               className={cn(
-                "glass-tight w-64 pl-9 pr-3 py-2.5 rounded-lg",
+                "glass-tight w-64 max-md:w-full pl-9 pr-3 py-2.5 rounded-lg",
                 "border border-white/20",
                 "text-white text-sm placeholder:text-white/40",
                 "outline-none focus:border-white/40 transition-colors"
@@ -171,7 +171,7 @@ export default function WorkoutLibrary({
             </button>
 
             {filtersOpen && (
-            <div className="absolute top-12 right-0 w-80 max-h-96 overflow-y-auto bg-black/96 backdrop-blur-xl border border-white/12 rounded-lg p-4 z-20 shadow-lg">
+            <div className="absolute top-12 right-0 w-80 max-md:w-[calc(100vw-2rem)] max-h-96 overflow-y-auto bg-black/96 backdrop-blur-xl border border-white/12 rounded-lg p-4 z-20 shadow-lg">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm font-bold text-white">Filter Exercises</span>
                 <button
@@ -323,7 +323,7 @@ export default function WorkoutLibrary({
         {filteredExercises.length === 1 ? "exercise" : "exercises"}
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredExercises.map((exercise) => {
           const origIdx = exercises.indexOf(exercise);
           return (

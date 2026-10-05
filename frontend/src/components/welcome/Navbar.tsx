@@ -7,8 +7,8 @@ import { GLASS_WELCOME_BAR } from "@/lib/glassPresets";
 const LINKS = [
   { href: "#problem", label: "The problem" },
   { href: "#solution", label: "The fix" },
-  { href: "#gallery", label: "The app" },
   { href: "#facts", label: "The science" },
+  { href: "#gallery", label: "The app" },
 ];
 
 export default function Navbar() {
@@ -25,10 +25,10 @@ export default function Navbar() {
   return (
     <header
       ref={scrolled ? glassRef : undefined}
-      className={`fixed inset-x-0 top-0 z-40 transition-colors duration-300 ${
+      className={`fixed max-md:absolute inset-x-0 top-0 z-40 transition-colors duration-300 ${
         scrolled
-          ? "glass-clear border-b border-white/10"
-          : "border-b border-transparent bg-transparent"
+          ? "glass-clear border-b border-white/10 max-md:bg-[#0b0d12]/95!"
+          : "border-b border-transparent bg-transparent max-md:border-white/10 max-md:bg-[#0b0d12]/95!"
       }`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -37,8 +37,8 @@ export default function Navbar() {
           aria-label="Gymodoro Home"
           className="flex items-center gap-2 text-white [text-shadow:0_1px_8px_rgba(0,0,0,0.45)]"
         >
-          <img src={logo} alt="" className="h-9 w-9 object-contain" />
-          <span className="font-poppins text-lg font-extrabold tracking-wide">GYMODORO</span>
+          <img src={logo} alt="" className="h-9 w-auto object-contain" />
+          <span className="font-poppins text-lg font-extrabold tracking-wide max-[480px]:hidden">GYMODORO</span>
         </a>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-white/75 md:flex">
@@ -56,16 +56,16 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           <Link
             to="/signin"
-            className="rounded-full px-4 py-2 text-sm font-semibold text-white/90 transition hover:text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]"
+            className="rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap text-white/90 max-md:px-3 transition md:hover:text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]"
           >
             Sign in
           </Link>
           <Link
             to="/signup"
-            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-white/90"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm whitespace-nowrap max-md:px-3.5 font-bold text-slate-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-white/90"
           >
             Start focusing
-            <span className="text-emerald-500">↗</span>
+            <span className="text-emerald-500 max-[480px]:hidden">↗</span>
           </Link>
         </div>
       </div>

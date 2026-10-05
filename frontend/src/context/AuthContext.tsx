@@ -220,7 +220,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ idToken, mode }),
+        // ID tokens are JWTs (3 dot-separated parts); popup-flow access tokens are not.
+        body: JSON.stringify(idToken.split(".").length === 3 ? { idToken, mode } : { accessToken: idToken, mode }),
       });
 
       const data = await response.json();

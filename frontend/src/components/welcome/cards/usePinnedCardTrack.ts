@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useCalm } from "../useCalm";
 
 /**
@@ -12,11 +12,24 @@ import { useCalm } from "../useCalm";
  * on layout events and cached, so the per-frame scroll handler does nothing
  * but arithmetic and one transform write — no forced layout while scrolling.
  */
+const PHONE_QUERY = "(max-width: 767px)";
+
+// On phones the rows are plain vertical stacks (pure CSS, see PinnedRow), so the
+// sideways pinning below is skipped entirely.
+function subscribePhone(cb: () => void) {
+  const mq = window.matchMedia(PHONE_QUERY);
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+const getPhone = () => window.matchMedia(PHONE_QUERY).matches;
+
 export function usePinnedCardTrack() {
   const sectionRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const fillRef = useRef<HTMLDivElement>(null);
   const calm = useCalm();
+  const simple = calm;
+  const phone = useSyncExternalStore(subscribePhone, getPhone, () => false);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -24,12 +37,30 @@ export function usePinnedCardTrack() {
     if (!section || !track) return;
     const viewport = track.parentElement as HTMLElement;
 
-    if (calm) {
+    if (phone) {
       section.style.height = "auto";
-      viewport.style.overflowX = "auto";
+      track.style.transform = "";
+      viewport.style.overflowX = "";
+      viewport.style.overflowY = "";
+      if (fillRef.current) fillRef.current.style.transform = "scaleX(1)";
       return;
     }
+
+    if (simple) {
+      section.style.height = "auto";
+      track.style.transform = "";
+      viewport.style.overflowX = "auto";
+      viewport.style.overflowY = "hidden";
+      const sync = () => {
+        const max = viewport.scrollWidth - viewport.clientWidth;
+        if (fillRef.current) fillRef.current.style.transform = `scaleX(${max > 0 ? viewport.scrollLeft / max : 0})`;
+      };
+      viewport.addEventListener("scroll", sync, { passive: true });
+      sync();
+      return () => viewport.removeEventListener("scroll", sync);
+    }
     viewport.style.overflowX = "";
+    viewport.style.overflowY = "";
 
     let top = 0;
     let travel = 1;
@@ -57,6 +88,7 @@ export function usePinnedCardTrack() {
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", measure);
     const ro = new ResizeObserver(measure);
     ro.observe(track);
     ro.observe(document.body); // earlier sections growing/shrinking moves our top
@@ -65,10 +97,11 @@ export function usePinnedCardTrack() {
 
     return () => {
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", measure);
       ro.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [calm]);
+  }, [simple, phone]);
 
   return { sectionRef, trackRef, fillRef };
 }

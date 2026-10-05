@@ -50,7 +50,7 @@ export default function BackgroundView({ contentLeft, selectedId, onSelect }: Pr
 
   return (
     <div
-      className="absolute inset-0 overflow-y-auto p-6 pt-36"
+      className="absolute inset-0 overflow-y-auto p-6 pt-36 max-md:p-4 max-md:pt-6 max-md:pb-24"
       style={{ left: contentLeft, transition: "left 0.25s ease" }}
     >
       <div>
@@ -62,7 +62,7 @@ export default function BackgroundView({ contentLeft, selectedId, onSelect }: Pr
 
       {uploadError && <p className="text-sm text-red-400 mb-4">{uploadError}</p>}
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {allBackgrounds.map((bg) => {
           const isSelected = bg.id === selectedId;
           const isCustom = isCustomBackgroundId(bg.id);

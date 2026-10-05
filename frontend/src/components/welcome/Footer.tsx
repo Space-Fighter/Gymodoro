@@ -10,17 +10,15 @@ export default function Footer() {
     <footer ref={glassRef} className="glass-clear border-t border-white/10 pt-3 text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-5 sm:flex-row">
-          <div className="flex items-center gap-3 self-end sm:self-auto">
-            {/* The artwork's transparent margins are cropped off (it is 252..779 x 50..532 of a
-                1024x581 PNG, shown at 320px wide), so the footer is exactly as tall as the logo
+          <div className="flex items-center gap-3 self-end max-sm:self-center sm:self-auto">
+            {/* The PNG is tightly cropped (551x481), so the footer is exactly as tall as the logo
                 and the logo's base sits on the page's bottom edge. */}
-            <span className="block h-[151px] w-[166px] flex-none overflow-hidden">
-              <img
-                src={logo}
-                alt="Gymodoro"
-                className="pointer-events-none ml-[-79px] mt-[-16px] block h-auto w-[320px] max-w-none"
-              />
-            </span>
+            <img
+              src={logo}
+              alt="Gymodoro"
+              className="pointer-events-none block h-[151px] w-auto flex-none max-md:h-[96px]"
+            />
+
             <span className="font-heading text-xl font-extrabold tracking-tight">Gymodoro</span>
             <span className="ml-2 hidden text-xs text-white/70 sm:inline">— Work. Move. Repeat.</span>
           </div>
@@ -29,12 +27,12 @@ export default function Footer() {
             © {new Date().getFullYear()} Gymodoro. All rights reserved.
           </div>
 
-          <div className="flex items-center gap-6 text-xs font-medium text-white/80">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-white/80 max-md:gap-x-4 max-md:pb-4">
             <a href="#problem" className="transition-colors hover:text-white">The problem</a>
             <a href="#solution" className="transition-colors hover:text-white">The fix</a>
-            <a href="#gallery" className="transition-colors hover:text-white">The app</a>
             <a href="#facts" className="transition-colors hover:text-white">The science</a>
-            <Link to="/signin" className="transition-colors hover:text-white">Sign in</Link>
+            <a href="#gallery" className="transition-colors hover:text-white">The app</a>
+            <Link to="/signin" className="transition-colors md:hover:text-white">Sign in</Link>
           </div>
         </div>
       </div>

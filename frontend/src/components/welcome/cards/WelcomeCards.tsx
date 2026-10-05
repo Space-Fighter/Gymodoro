@@ -7,7 +7,7 @@ import ClosingCta from "./ClosingCta";
 
 /**
  * The /welcome page body: hero (tagline + the two clips), the problem, the
- * fix, the product, the facts, then a closing call to action.
+ * fix, the facts, the product, then a closing call to action.
  */
 export default function WelcomeCards() {
   return (
@@ -19,11 +19,11 @@ export default function WelcomeCards() {
       <div id="solution">
         <SolutionSection />
       </div>
-      <div id="gallery">
-        <GallerySection />
-      </div>
       <div id="facts">
         <FactsSection />
+      </div>
+      <div id="gallery">
+        <GallerySection />
       </div>
       <ClosingCta />
     </div>

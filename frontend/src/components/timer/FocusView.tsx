@@ -10,7 +10,7 @@ function AddTimeButton({ minutes, onClick }: { minutes: number; onClick: () => v
       ref={glassRef}
       onClick={onClick}
       className={cn(
-        "glass-tight px-4 py-1.5 rounded-lg text-sm font-semibold font-poppins",
+        "glass-tight px-4 py-1.5 max-md:px-3 max-md:py-1 max-md:text-xs rounded-lg text-sm font-semibold font-poppins",
         "border border-white/30",
         "text-white/85 cursor-pointer hover:bg-white/20 transition-colors"
       )}
@@ -61,24 +61,24 @@ export default function FocusView({
 
   return (
     <div
-      className="absolute inset-0 flex flex-col items-center justify-center z-10 gap-4 pt-36 pb-20"
+      className="absolute inset-0 flex flex-col items-center justify-center z-10 gap-4 pt-36 pb-20 max-md:gap-3 max-md:pt-8 max-md:pb-24"
       style={{ left: contentLeft, transition: "left 0.25s ease" }}
     >
       {/* Mode Dots */}
-      <div className="flex items-center justify-center gap-4">
+      <div className="flex items-center justify-center gap-4 max-md:absolute max-md:top-3 max-md:left-1/2 max-md:z-20 max-md:-translate-x-1/2 max-md:gap-1">
         {modes.map((mode) => (
           <button
             key={mode.id}
             onClick={() => onSwitchMode(mode.id)}
-            className="w-14 h-14 rounded-full border-none cursor-pointer p-0 bg-transparent flex items-center justify-center hover:opacity-80 transition-opacity"
+            className="w-14 h-14 max-md:w-6 max-md:h-6 rounded-full border-none cursor-pointer p-0 bg-transparent flex items-center justify-center md:hover:opacity-80 transition-opacity"
             type="button"
           >
             <span
               className={cn(
                 "rounded-full block pointer-events-none transition-all",
                 timerMode === mode.id
-                  ? "w-7 h-7 bg-white shadow-[0_0_0_3px_rgba(255,255,255,0.9)]"
-                  : "w-6 h-6 bg-white/55 shadow-[0_0_0_2px_rgba(0,0,0,0.35)]"
+                  ? "w-7 h-7 max-md:w-4 max-md:h-4 bg-white shadow-[0_0_0_3px_rgba(255,255,255,0.9)] max-md:shadow-[0_0_0_2px_rgba(255,255,255,0.9)]"
+                  : "w-6 h-6 max-md:w-3.5 max-md:h-3.5 bg-white/55 shadow-[0_0_0_2px_rgba(0,0,0,0.35)] max-md:shadow-[0_0_0_1.5px_rgba(0,0,0,0.35)]"
               )}
             />
           </button>
@@ -86,7 +86,7 @@ export default function FocusView({
       </div>
 
       {/* Timer Display */}
-      <div className="text-9xl leading-none font-bold font-poppins text-white drop-shadow-lg">
+      <div className="text-9xl max-md:text-8xl leading-none font-bold font-poppins text-white drop-shadow-lg">
         {formatTime(remaining)}
       </div>
 
@@ -98,13 +98,13 @@ export default function FocusView({
       </div>
 
       {/* Control Buttons */}
-      <div className="flex items-center gap-3.5 mt-2">
+      <div className="flex items-center gap-3.5 max-md:gap-2.5 mt-2">
         <button
           ref={resetGlassRef}
           onClick={onReset}
           aria-label="Reset"
           className={cn(
-            "glass-tight w-12 h-12 rounded-full border border-white/25",
+            "glass-tight w-12 h-12 max-md:w-[38px] max-md:h-[38px] rounded-full border border-white/25",
             "text-white cursor-pointer flex items-center justify-center",
             "hover:bg-white/12 transition-colors"
           )}
@@ -115,8 +115,8 @@ export default function FocusView({
         <button
           onClick={onToggleStart}
           className={cn(
-            "px-14 py-3.5 rounded-full border-none bg-white text-black",
-            "text-lg font-bold cursor-pointer font-poppins",
+            "px-14 py-3.5 max-md:px-11 max-md:py-2.5 rounded-full border-none bg-white text-black",
+            "text-lg max-md:text-sm font-bold cursor-pointer font-poppins",
             "hover:bg-white/90 transition-colors shadow-lg",
             "flex items-center justify-center gap-2"
           )}
@@ -131,7 +131,7 @@ export default function FocusView({
           aria-label="Pop out timer"
           title="Pop out timer"
           className={cn(
-            "glass-tight w-12 h-12 rounded-full border border-white/25",
+            "glass-tight w-12 h-12 max-md:w-[38px] max-md:h-[38px] rounded-full border border-white/25",
             "text-white cursor-pointer flex items-center justify-center",
             "hover:bg-white/12 transition-colors"
           )}
@@ -145,7 +145,7 @@ export default function FocusView({
           aria-label="Finish now"
           title="Finish now"
           className={cn(
-            "glass-tight w-12 h-12 rounded-full border border-white/25",
+            "glass-tight w-12 h-12 max-md:w-[38px] max-md:h-[38px] rounded-full border border-white/25",
             "text-white cursor-pointer flex items-center justify-center",
             "hover:bg-white/12 transition-colors"
           )}

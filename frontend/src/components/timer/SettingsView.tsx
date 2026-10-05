@@ -84,7 +84,7 @@ export default function SettingsView({ contentLeft }: Props) {
 
   return (
     <div
-      className="absolute inset-0 overflow-y-auto p-6 pt-36"
+      className="absolute inset-0 overflow-y-auto p-6 pt-36 max-md:p-4 max-md:pt-6 max-md:pb-24"
       style={{ left: contentLeft, transition: "left 0.25s ease" }}
     >
       <div>

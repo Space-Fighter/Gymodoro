@@ -1,13 +1,8 @@
-import { BarChart3, ChevronLeft, Clock, Dumbbell, Palette, Settings } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 import { GLASS_PANEL, GLASS_TIGHT } from "@/lib/glassPresets";
-
-interface NavItem {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-}
+import { getNavItems } from "./navItems";
 
 interface Props {
   open: boolean;
@@ -22,17 +17,7 @@ export default function Sidebar({
   activeTab,
   onTabChange,
 }: Props) {
-  const navItems: NavItem[] = [
-    { id: "timer", label: "Timer", icon: <Clock size={18} /> },
-    {
-      id: "workout",
-      label: "Workout Library",
-      icon: <Dumbbell size={18} />,
-    },
-    { id: "stats", label: "Activities Summary", icon: <BarChart3 size={18} /> },
-    { id: "background", label: "Background", icon: <Palette size={18} /> },
-    { id: "settings", label: "Settings", icon: <Settings size={18} /> },
-  ];
+  const navItems = getNavItems();
 
   const glassRef = useLiquidGlass<HTMLDivElement>(GLASS_PANEL);
   const collapseGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);

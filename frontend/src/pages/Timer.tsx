@@ -4,6 +4,8 @@ import { Menu, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/timer/Sidebar";
+import MobileNav from "@/components/timer/MobileNav";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import FocusView from "@/components/timer/FocusView";
 import BreakView from "@/components/timer/BreakView";
 import WorkoutLibrary from "@/components/timer/WorkoutLibrary";
@@ -480,12 +482,13 @@ export default function Timer({
     onReset: reset,
   });
 
-  const contentLeft = sidebarOpen ? "260px" : "90px";
+  const isMobile = useIsMobile();
+  const contentLeft = isMobile ? "0px" : sidebarOpen ? "260px" : "90px";
   const logoutGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
   const collapsedToggleGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-black">
+    <div className="relative min-h-screen max-md:min-h-[100svh] w-full overflow-hidden bg-black">
       {/* Background Image */}
       <div
         className="absolute inset-0 w-full h-full object-cover"
@@ -501,9 +504,9 @@ export default function Timer({
       <div className="absolute inset-0 bg-black/20" />
 
       {/* Logo */}
-      <div className="absolute -top-6 left-0 z-30 flex items-center gap-0 pointer-events-none">
-        <img src={logo} alt="Gymodoro" className="w-[135px] h-[135px] object-contain" />
-        <span className="text-white font-extrabold tracking-wide text-2xl font-poppins -ml-2">
+      <div className="absolute top-3 left-3 z-30 flex items-center gap-0 pointer-events-none max-md:hidden">
+        <img src={logo} alt="Gymodoro" className="h-auto w-[96px] max-md:w-[52px] object-contain" />
+        <span className="text-white font-extrabold tracking-wide text-2xl max-md:text-base font-poppins -ml-2 max-md:ml-0.5">
           GYMODORO
         </span>
       </div>
@@ -516,7 +519,7 @@ export default function Timer({
           navigate("/welcome");
         }}
         className={cn(
-          "glass-tight absolute top-3 right-3 z-30 h-9 px-3 rounded-lg",
+          "glass-tight absolute top-3 right-3 z-30 h-9 px-3 rounded-lg max-md:hidden",
           "border border-white/15",
           "flex items-center justify-center gap-1.5 text-white/70 text-sm font-semibold font-poppins",
           "hover:text-white transition-colors"
@@ -527,16 +530,20 @@ export default function Timer({
         <span>Logout</span>
       </button>
 
-      {/* Sidebar */}
-      <Sidebar
-        open={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab as TabType)}
-      />
+      {/* Sidebar (desktop) / bottom bar + explore pane (phones) */}
+      {isMobile ? (
+        <MobileNav activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as TabType)} />
+      ) : (
+        <Sidebar
+          open={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          activeTab={activeTab}
+          onTabChange={(tab) => setActiveTab(tab as TabType)}
+        />
+      )}
 
       {/* Collapsed Toggle Button */}
-      {!sidebarOpen && (
+      {!isMobile && !sidebarOpen && (
         <button
           ref={collapsedToggleGlassRef}
           onClick={() => setSidebarOpen(true)}
@@ -552,12 +559,12 @@ export default function Timer({
       )}
 
       {/* Main Content Area */}
-      <div className="relative z-10 h-screen w-full">
+      <div className="relative z-10 h-screen w-full max-md:h-[100svh]">
         {/* Timer View */}
         {activeTab === "timer" && (
           <>
             {isFocusMode ? (
-              <div className="absolute inset-0 -translate-y-[25px]">
+              <div className="absolute inset-0 -translate-y-[25px] max-md:translate-y-0">
                 <FocusView
                   modes={modes}
                   timerMode={timerMode}
@@ -574,7 +581,7 @@ export default function Timer({
                 />
               </div>
             ) : (
-              <div className="absolute inset-0 -translate-y-[60px]">
+              <div className="absolute inset-0 -translate-y-[60px] max-md:translate-y-0">
                 <BreakView
                   modes={modes}
                   timerMode={timerMode}

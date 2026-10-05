@@ -1,0 +1,17 @@
+# Gymodoro
+
+> Gymodoro (gymodoro.com) is a free Pomodoro focus timer that turns every break into a workout. You work in 25-minute focus blocks; when the timer rings, Gymodoro gives you a guided 5-minute exercise (with demo video, muscle diagram and instructions) to do at your desk instead of scrolling your phone.
+
+Gymodoro is a web app for students, remote workers and anyone who sits at a desk. It is not related to Comodoro (the city in Argentina) or to any other product with a similar name.
+
+## Key facts
+- Category: productivity timer + fitness app (Pomodoro technique with active breaks)
+- Price: free to start
+- Platform: web browser, no install
+- Default cycle: 25 minutes focus, 5 minutes active break, 15-minute long break after four rounds
+- Exercise library: 160+ bodyweight exercises with video demos and muscle diagrams
+- Also includes: daily stats (focus time, active breaks, calories burned), scenic wallpapers, selectable timer ring sounds
+
+## Links
+- [Home](https://gymodoro.com/): what Gymodoro is and how it works
+- [Sign up](https://gymodoro.com/signup): create a free account

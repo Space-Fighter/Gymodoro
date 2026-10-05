@@ -1,15 +1,25 @@
 import { useCallback, useEffect, useRef } from "react";
 
+interface TokenResponse {
+  access_token?: string;
+  error?: string;
+}
+
+interface TokenClient {
+  requestAccessToken: () => void;
+}
+
 declare global {
   interface Window {
     google?: {
       accounts: {
-        id: {
-          initialize: (config: {
+        oauth2: {
+          initTokenClient: (config: {
             client_id: string;
-            callback: (response: { credential: string }) => void;
-          }) => void;
-          prompt: () => void;
+            scope: string;
+            callback: (response: TokenResponse) => void;
+            error_callback?: (error: { type: string }) => void;
+          }) => TokenClient;
         };
       };
     };
@@ -18,11 +28,13 @@ declare global {
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
-// Wraps Google Identity Services: initializes it once the /gsi/client
-// script has loaded, then exposes a prompt() you can trigger from a
-// custom-styled button (GSI's own button can't be restyled to match ours).
-export function useGoogleSignIn(onCredential: (idToken: string) => void) {
-  const initialized = useRef(false);
+// Wraps Google Identity Services' popup (token client) flow: initializes it
+// once the /gsi/client script has loaded, then exposes a prompt you can
+// trigger from a custom-styled button. Unlike One Tap's prompt() this does
+// not go through FedCM, so it isn't affected by browser sign-in cooldowns.
+// The callback receives a Google access token, which the backend verifies.
+export function useGoogleSignIn(onCredential: (token: string) => void) {
+  const client = useRef<TokenClient | null>(null);
   const onCredentialRef = useRef(onCredential);
 
   useEffect(() => {
@@ -30,15 +42,19 @@ export function useGoogleSignIn(onCredential: (idToken: string) => void) {
   }, [onCredential]);
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || initialized.current) return;
+    if (!GOOGLE_CLIENT_ID || client.current) return;
 
     const init = () => {
-      if (initialized.current || !window.google) return;
-      window.google.accounts.id.initialize({
+      if (client.current || !window.google?.accounts.oauth2) return;
+      client.current = window.google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => onCredentialRef.current(response.credential),
+        scope: "openid email profile",
+        callback: (response) => {
+          if (response.access_token) onCredentialRef.current(response.access_token);
+          else if (response.error) console.error("Google sign-in failed:", response.error);
+        },
+        error_callback: (err) => console.warn("Google sign-in popup closed/failed:", err.type),
       });
-      initialized.current = true;
     };
 
     if (window.google) {
@@ -56,11 +72,11 @@ export function useGoogleSignIn(onCredential: (idToken: string) => void) {
   }, []);
 
   const promptGoogleSignIn = useCallback(() => {
-    if (!GOOGLE_CLIENT_ID || !window.google) {
+    if (!client.current) {
       console.error("Google Sign-In is not available yet. Please try again in a moment.");
       return;
     }
-    window.google.accounts.id.prompt();
+    client.current.requestAccessToken();
   }, []);
 
   return { promptGoogleSignIn };

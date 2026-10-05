@@ -80,8 +80,8 @@ const FACTS: Fact[] = [
 
 function FactCard({ f }: { f: Fact }) {
   return (
-    <GlassArticle className="h-full w-[min(84vw,400px)] !gap-3 !p-3.5">
-      <div className="relative h-[27%] min-h-[110px] flex-none overflow-hidden rounded-[18px] bg-[#141824]">
+    <GlassArticle className="h-full w-[min(84vw,400px)] max-md:h-auto !gap-3 !p-3.5">
+      <div className="relative h-[27%] min-h-[110px] max-md:h-[170px] flex-none overflow-hidden rounded-[18px] bg-[#141824]">
         <img src={assetUrl(`science/${f.photo}`)} alt={f.alt} loading="lazy" className="h-full w-full object-cover" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-3.5 pt-8 pb-2">
           <div className="font-heading text-[clamp(34px,4.4vw,48px)] leading-[0.95] font-extrabold tracking-[-0.04em] text-[#4be277]">
@@ -89,14 +89,14 @@ function FactCard({ f }: { f: Fact }) {
           </div>
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-1.5">
-        <h3 className="m-0 font-heading text-[30px] leading-[1.08] font-bold text-white">{f.title}</h3>
-        <p className="m-0 text-[21px] leading-[1.4] text-white">{f.fact}</p>
-        <p className="m-0 rounded-2xl border border-[#4be277]/30 bg-[#4be277]/10 p-3 text-[20px] leading-[1.35] text-white">
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-1.5 max-md:overflow-visible">
+        <h3 className="m-0 font-heading text-[30px] leading-[1.08] max-md:text-[22px] font-bold text-white">{f.title}</h3>
+        <p className="m-0 text-[21px] leading-[1.4] max-md:text-[17px] text-white">{f.fact}</p>
+        <p className="m-0 rounded-2xl border border-[#4be277]/30 bg-[#4be277]/10 p-3 text-[20px] leading-[1.35] max-md:text-[16px] text-white">
           <b className="text-[#4be277]">With Gymodoro: </b>
           {f.gymodoro}
         </p>
-        {f.source && <footer className="mt-auto text-[16px] tracking-wide text-white/55">{f.source}</footer>}
+        {f.source && <footer className="mt-auto text-[16px] tracking-wide max-md:text-[13px] text-white/55">{f.source}</footer>}
       </div>
     </GlassArticle>
   );
@@ -106,7 +106,7 @@ function FactCard({ f }: { f: Fact }) {
 export default function FactsSection() {
   return (
     <PinnedRow
-      kicker="04 — the science"
+      kicker="03 — the science"
       title="Small moves. Big payoff."
     >
       {FACTS.map((f) => (

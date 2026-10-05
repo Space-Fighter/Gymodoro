@@ -24,7 +24,7 @@
     "panel": {
       "refraction": true,
       "scale": -70,
-      "chroma": 8,
+      "chroma": 5,
       "mapBlur": 18,
       "blur": 5,
       "saturate": 1.4
@@ -38,16 +38,25 @@
     "welcomeCard": {
       "refraction": false,
       "scale": -70,
-      "chroma": 8,
+      "chroma": 5,
       "mapBlur": 18,
       "blur": 0,
       "saturate": 1,
       "fallbackBlur": 0
     },
+    "bottomBar": {
+      "refraction": true,
+      "scale": -40,
+      "chroma": 2,
+      "mapBlur": 14,
+      "blur": 10,
+      "saturate": 1.2,
+      "fallbackBlur": 16
+    },
     "welcomeBar": {
       "refraction": true,
       "scale": -60,
-      "chroma": 8,
+      "chroma": 5,
       "mapBlur": 14,
       "blur": 0,
       "saturate": 1,

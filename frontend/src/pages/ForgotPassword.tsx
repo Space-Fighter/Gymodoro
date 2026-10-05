@@ -44,10 +44,10 @@ export default function ForgotPassword() {
 
       <Link
         to="/welcome"
-        className="absolute top-0 left-0 z-30 flex items-center gap-1 transition-transform duration-200 hover:-translate-y-0.5"
+        className="relative z-30 m-3 flex items-center gap-1 self-start sm:absolute sm:top-3 sm:left-3 sm:m-0"
       >
-        <img src={logo} alt="Gymodoro" className="w-[135px] h-[135px] object-contain" />
-        <span className="text-foreground font-extrabold tracking-wide text-2xl font-poppins">
+        <img src={logo} alt="Gymodoro" className="h-auto w-[64px] sm:w-[96px] object-contain" />
+        <span className="text-foreground font-extrabold tracking-wide text-xl sm:text-2xl font-poppins">
           GYMODORO
         </span>
       </Link>
@@ -118,7 +118,7 @@ export default function ForgotPassword() {
                 <button
                   type="submit"
                   disabled={isLoading || submitting}
-                  className="w-full py-3.5 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm tracking-wide transition-all duration-200 cursor-pointer shadow-lg shadow-emerald-500/20 hover:-translate-y-0.5 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 px-4 rounded-lg bg-emerald-500 md:hover:bg-emerald-400 text-slate-950 font-bold text-sm tracking-wide transition-all duration-200 cursor-pointer shadow-lg shadow-emerald-500/20 md:hover:-translate-y-0.5 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? "Sending..." : "Send Reset Link"}
                 </button>
@@ -143,7 +143,7 @@ export default function ForgotPassword() {
         className="glass-tight w-full py-6 px-6 sm:px-12 border-t border-border/20 flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-3"
       >
         <div className="flex items-center gap-2">
-          <img src={logo} alt="Logo" className="w-5 h-5 object-contain" />
+          <img src={logo} alt="Logo" className="h-5 w-auto object-contain" />
           <span>Gymodoro</span>
         </div>
         <div>© {new Date().getFullYear()} Gymodoro. All rights reserved.</div>

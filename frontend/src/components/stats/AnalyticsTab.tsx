@@ -58,7 +58,7 @@ export default function AnalyticsTab() {
         Showing stats for <span className="text-white font-semibold">{rangeLabel}</span>
       </p>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatTile
           icon={<Activity size={20} />}
           label="Total Sessions"

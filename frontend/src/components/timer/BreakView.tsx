@@ -1,3 +1,4 @@
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { useEffect, useState } from "react";
 import { RotateCcw, Pause, Play, Dice6, PictureInPicture2, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -120,8 +121,9 @@ export default function BreakView({
     return () => observer.disconnect();
   }, [gifBoxEl]);
 
-  const controlBtnPx = 48;
-  const controlIconPx = 18;
+  const isMobile = useIsMobile();
+  const controlBtnPx = isMobile ? 38 : 48;
+  const controlIconPx = isMobile ? 15 : 18;
 
   const rollDiceGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
   const chooseActivityGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
@@ -130,26 +132,96 @@ export default function BreakView({
   const finishGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
   const descriptionGlassRef = useLiquidGlass<HTMLDivElement>(GLASS_TIGHT);
 
+  const timerCard = (
+  <div className="flex flex-col items-center gap-3 shrink-0 rounded-3xl px-8 py-4 max-md:order-1 max-md:gap-1 max-md:px-0 max-md:py-0">
+      <div
+        className="font-bold text-white font-poppins drop-shadow-lg"
+        style={{ fontSize: isMobile ? "2.6rem" : "4.5rem", lineHeight: 1 }}
+      >
+        {formatTime(remaining)}
+      </div>
+  
+      <div className="flex items-center gap-3">
+        <button
+          ref={resetGlassRef}
+          onClick={onReset}
+          aria-label="Reset"
+          className={cn(
+            "glass-tight rounded-full border border-white/25",
+            "text-white cursor-pointer flex items-center justify-center",
+            "hover:bg-white/12 transition-colors"
+          )}
+          style={{ width: controlBtnPx, height: controlBtnPx }}
+        >
+          <RotateCcw size={controlIconPx} className="stroke-2" />
+        </button>
+  
+        <button
+          onClick={onToggleStart}
+          className="rounded-full border-none bg-white text-black font-bold cursor-pointer font-poppins hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
+          style={{
+            paddingInline: isMobile ? 28 : 36,
+            paddingBlock: isMobile ? 9 : 12,
+            fontSize: isMobile ? 13 : 16,
+          }}
+        >
+          {running ? <Pause size={controlIconPx} /> : <Play size={controlIconPx} />}
+          {running ? "Pause" : "Start"}
+        </button>
+  
+        <button
+          ref={popOutGlassRef}
+          onClick={onPopOut}
+          aria-label="Pop out timer"
+          title="Pop out timer"
+          className={cn(
+            "glass-tight rounded-full border border-white/25",
+            "text-white cursor-pointer flex items-center justify-center",
+            "hover:bg-white/12 transition-colors"
+          )}
+          style={{ width: controlBtnPx, height: controlBtnPx }}
+        >
+          <PictureInPicture2 size={controlIconPx} className="stroke-2" />
+        </button>
+  
+        <button
+          ref={finishGlassRef}
+          onClick={onFinish}
+          aria-label="Finish now"
+          title="Finish now"
+          className={cn(
+            "glass-tight rounded-full border border-white/25",
+            "text-white cursor-pointer flex items-center justify-center",
+            "hover:bg-white/12 transition-colors"
+          )}
+          style={{ width: controlBtnPx, height: controlBtnPx }}
+        >
+          <ChevronRight size={controlIconPx + 2} className="stroke-2" />
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div
-      className="absolute inset-0 flex flex-col z-10 pt-36 pl-6"
+      className="absolute inset-0 flex flex-col z-10 pt-36 pl-6 max-md:pt-8 max-md:pl-0"
       style={{ left: contentLeft, transition: "left 0.25s ease" }}
     >
       {/* Mode Dots */}
-      <div className="absolute top-[60px] left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 z-20">
+      <div className="absolute top-[60px] max-md:top-3 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 max-md:gap-1 z-20">
         {modes.map((mode) => (
           <button
             key={mode.id}
             onClick={() => onSwitchMode(mode.id)}
-            className="w-8 h-8 rounded-full border-none cursor-pointer p-0 bg-transparent flex items-center justify-center hover:opacity-80 transition-opacity"
+            className="w-8 h-8 max-md:w-6 max-md:h-6 rounded-full border-none cursor-pointer p-0 bg-transparent flex items-center justify-center md:hover:opacity-80 transition-opacity"
             type="button"
           >
             <span
               className={cn(
                 "rounded-full block pointer-events-none transition-all",
                 timerMode === mode.id
-                  ? "w-4 h-4 bg-white shadow-[0_0_0_2px_rgba(255,255,255,0.9)]"
-                  : "w-3.5 h-3.5 bg-white/55 shadow-[0_0_0_1.5px_rgba(0,0,0,0.35)]"
+                  ? "w-4 h-4 max-md:w-3 max-md:h-3 bg-white shadow-[0_0_0_2px_rgba(255,255,255,0.9)]"
+                  : "w-3.5 h-3.5 max-md:w-2.5 max-md:h-2.5 bg-white/55 shadow-[0_0_0_1.5px_rgba(0,0,0,0.35)]"
               )}
             />
           </button>
@@ -157,21 +229,21 @@ export default function BreakView({
       </div>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-2 gap-6 flex-1 overflow-y-auto pr-6 [scrollbar-gutter:stable] glass-scrollbar">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 overflow-y-auto pr-6 max-md:gap-3 max-md:px-4 max-md:pr-4 max-md:pb-24 [scrollbar-gutter:stable] max-md:[scrollbar-gutter:auto] glass-scrollbar">
         {/* Left: Activity Selection */}
-        <div className="flex flex-col gap-4 pr-4">
-          <div className="flex gap-3">
+        <div className="flex flex-col gap-4 pr-4 max-md:contents">
+          <div className="flex gap-3 max-md:order-2">
             <button
               ref={rollDiceGlassRef}
               onClick={onActivityChange}
-              className="glass-tight flex-1 px-4 py-3 rounded-lg border border-white/20 hover:bg-white/15 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
+              className="glass-tight flex-1 px-4 py-3 max-md:px-2 max-md:py-1.5 max-md:text-xs rounded-lg border border-white/20 md:hover:bg-white/15 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
             >
-              <Dice6 size={18} /> Roll The Dice
+              <Dice6 size={isMobile ? 14 : 18} /> Roll The Dice
             </button>
             <button
               ref={chooseActivityGlassRef}
               onClick={onActivitySelect}
-              className="glass-tight flex-1 px-4 py-3 rounded-lg border border-white/20 hover:bg-white/15 text-white font-bold text-sm transition-colors"
+              className="glass-tight flex-1 px-4 py-3 max-md:px-2 max-md:py-1.5 max-md:text-xs rounded-lg border border-white/20 md:hover:bg-white/15 text-white font-bold text-sm transition-colors"
             >
               Choose Activity
             </button>
@@ -179,11 +251,11 @@ export default function BreakView({
 
           {activity && (
             <>
-              <div className="text-2xl font-bold text-white font-poppins">
+              <div className="text-2xl font-bold text-white font-poppins max-md:order-3 max-md:text-xl">
                 {activity.name}
               </div>
 
-              <div className="shrink-0 flex flex-col gap-2">
+              <div className="shrink-0 flex flex-col gap-2 max-md:order-4">
                 <DropdownToggle
                   label="Exercise GIF"
                   open={gifOpen}
@@ -205,7 +277,7 @@ export default function BreakView({
                 )}
               </div>
 
-              <div className="shrink-0 flex flex-col gap-2">
+              <div className="shrink-0 flex flex-col gap-2 max-md:order-5">
                 <DropdownToggle
                   label="Exercise Video"
                   open={videoOpen}
@@ -239,78 +311,12 @@ export default function BreakView({
         </div>
 
         {/* Right: Timer and Image */}
-        <div className="flex flex-col gap-4 pl-4">
-          <div className="flex flex-col items-center gap-3 shrink-0 rounded-3xl px-8 py-4">
-            <div
-              className="font-bold text-white font-poppins drop-shadow-lg"
-              style={{ fontSize: "4.5rem" }}
-            >
-              {formatTime(remaining)}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                ref={resetGlassRef}
-                onClick={onReset}
-                aria-label="Reset"
-                className={cn(
-                  "glass-tight rounded-full border border-white/25",
-                  "text-white cursor-pointer flex items-center justify-center",
-                  "hover:bg-white/12 transition-colors"
-                )}
-                style={{ width: controlBtnPx, height: controlBtnPx }}
-              >
-                <RotateCcw size={controlIconPx} className="stroke-2" />
-              </button>
-
-              <button
-                onClick={onToggleStart}
-                className="rounded-full border-none bg-white text-black font-bold cursor-pointer font-poppins hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
-                style={{
-                  paddingInline: 36,
-                  paddingBlock: 12,
-                  fontSize: 16,
-                }}
-              >
-                {running ? <Pause size={controlIconPx} /> : <Play size={controlIconPx} />}
-                {running ? "Pause" : "Start"}
-              </button>
-
-              <button
-                ref={popOutGlassRef}
-                onClick={onPopOut}
-                aria-label="Pop out timer"
-                title="Pop out timer"
-                className={cn(
-                  "glass-tight rounded-full border border-white/25",
-                  "text-white cursor-pointer flex items-center justify-center",
-                  "hover:bg-white/12 transition-colors"
-                )}
-                style={{ width: controlBtnPx, height: controlBtnPx }}
-              >
-                <PictureInPicture2 size={controlIconPx} className="stroke-2" />
-              </button>
-
-              <button
-                ref={finishGlassRef}
-                onClick={onFinish}
-                aria-label="Finish now"
-                title="Finish now"
-                className={cn(
-                  "glass-tight rounded-full border border-white/25",
-                  "text-white cursor-pointer flex items-center justify-center",
-                  "hover:bg-white/12 transition-colors"
-                )}
-                style={{ width: controlBtnPx, height: controlBtnPx }}
-              >
-                <ChevronRight size={controlIconPx + 2} className="stroke-2" />
-              </button>
-            </div>
-          </div>
+        <div className="flex flex-col gap-4 pl-4 max-md:contents">
+          {timerCard}
 
           {activity && (
             <>
-              <div className="shrink-0 flex flex-col gap-2">
+              <div className="shrink-0 flex flex-col gap-2 max-md:order-6">
                 <DropdownToggle
                   label="Tags"
                   open={tagsOpen}
@@ -320,7 +326,7 @@ export default function BreakView({
                 {tagsOpen && <TagList exercise={activity} />}
               </div>
 
-              <div className="shrink-0 flex flex-col gap-2">
+              <div className="shrink-0 flex flex-col gap-2 max-md:order-7">
                 <DropdownToggle
                   label="Muscle Diagram"
                   open={muscleDiagramOpen}
@@ -346,15 +352,17 @@ export default function BreakView({
                 )}
               </div>
 
+              <div className="max-md:order-8">
               <DropdownToggle
                 label="Exercise Description"
                 open={descriptionOpen}
                 onToggle={onToggleDescription}
               />
+              </div>
               {descriptionOpen && (
                 <div
                   ref={descriptionGlassRef}
-                  className="glass-tight px-4 py-3 rounded-lg border border-white/10 text-white text-sm leading-relaxed"
+                  className="glass-tight px-4 py-3 rounded-lg border border-white/10 text-white text-sm leading-relaxed max-md:order-9"
                 >
                   {activity.description ? (
                     <ul className="list-disc pl-5 space-y-1.5">

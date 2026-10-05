@@ -7,8 +7,8 @@ import GlassArticle from "./GlassArticle";
 import PinnedRow from "./PinnedRow";
 import { assetUrl, STORY_ASSETS, type StoryAsset } from "../assets";
 
-const TITLE = "m-0 font-heading text-[30px] leading-[1.08] font-bold text-white";
-const BODY = "m-0 text-[21px] leading-[1.4] text-white";
+const TITLE = "m-0 font-heading text-[30px] leading-[1.08] font-bold text-white max-md:text-[22px]";
+const BODY = "m-0 text-[21px] leading-[1.4] text-white max-md:text-[17px]";
 
 /** Same card as the Science row: photo (or visual) on top with the headline stat over it, text below. */
 function FixCard({
@@ -33,9 +33,9 @@ function FixCard({
   footer?: string;
 }) {
   return (
-    <GlassArticle className="h-full w-[min(84vw,400px)] !gap-3 !p-3.5">
+    <GlassArticle className="h-full w-[min(84vw,400px)] max-md:h-auto !gap-3 !p-3.5">
       <div
-        className={`relative min-h-[110px] flex-none overflow-hidden rounded-[18px] bg-[#141824] ${tall ? "h-[46%]" : "h-[27%]"}`}
+        className={`relative min-h-[110px] flex-none overflow-hidden rounded-[18px] bg-[#141824] ${tall ? "h-[46%] max-md:h-[240px]" : "h-[27%] max-md:h-[170px]"}`}
       >
         {image && (
           <img
@@ -53,10 +53,10 @@ function FixCard({
           </div>
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-1.5">
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-1.5 max-md:overflow-visible">
         <h3 className={TITLE}>{title}</h3>
         {children}
-        {footer && <footer className="mt-auto text-[16px] tracking-wide text-white/55">{footer}</footer>}
+        {footer && <footer className="mt-auto text-[16px] tracking-wide text-white/55 max-md:text-[13px]">{footer}</footer>}
       </div>
     </GlassArticle>
   );
@@ -64,7 +64,7 @@ function FixCard({
 
 function Bullets({ items }: { items: ReactNode[] }) {
   return (
-    <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-[20px] leading-[1.3] text-white">
+    <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-[20px] leading-[1.3] text-white max-md:text-[16px]">
       {items.map((it, i) => (
         <li key={i} className="flex gap-2">
           <span className="mt-0.5 text-[#4be277]">●</span>
@@ -77,7 +77,7 @@ function Bullets({ items }: { items: ReactNode[] }) {
 
 function Callout({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <p className="m-0 rounded-2xl border border-[#4be277]/30 bg-[#4be277]/10 p-3 text-[20px] leading-[1.35] text-white">
+    <p className="m-0 rounded-2xl border border-[#4be277]/30 bg-[#4be277]/10 p-3 text-[20px] leading-[1.35] text-white max-md:text-[16px]">
       <b className="text-[#4be277]">{label} </b>
       {children}
     </p>
@@ -154,14 +154,14 @@ function SignUpCard() {
         <button
           type="button"
           onClick={promptGoogleSignIn}
-          className="flex items-center justify-center gap-2.5 rounded-lg bg-white px-4 py-3 text-[19px] font-bold text-[#07080d]"
+          className="flex items-center justify-center gap-2.5 rounded-lg bg-white px-4 py-3 text-[19px] font-bold text-[#07080d] max-md:text-[16px]"
         >
           <GoogleIcon className="h-5 w-5" />
           Continue with Google
         </button>
         <Link
           to="/signup"
-          className="rounded-lg border border-white/40 px-4 py-3 text-center text-[19px] font-bold text-white"
+          className="rounded-lg border border-white/40 px-4 py-3 text-center text-[19px] max-md:text-[16px] font-bold text-white"
         >
           Sign up with email
         </Link>
@@ -201,7 +201,7 @@ export default function SolutionSection() {
 
       <FixCard image={STORY_ASSETS.photoHabit} stat="4 laws" title="How we break the doom-scroll habit" footer="Built on Atomic Habits">
         <p className={BODY}>Same cue, new routine: move, don't scroll.</p>
-        <ol className="m-0 flex list-none flex-col gap-2 p-0 text-[20px] leading-[1.3] text-white">
+        <ol className="m-0 flex list-none flex-col gap-2 p-0 text-[20px] leading-[1.3] text-white max-md:text-[16px]">
           {LAWS.map(([law, how], i) => (
             <li key={law} className="flex gap-2.5">
               <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[#4be277] text-[15px] font-extrabold text-black">
@@ -234,7 +234,7 @@ export default function SolutionSection() {
       </FixCard>
 
       <FixCard image={STORY_ASSETS.photoOutcome} position="50% 22%" tall stat="Both ↑" title="Both halves go up">
-        <dl className="m-0 flex flex-col gap-2 font-heading text-[24px] font-bold">
+        <dl className="m-0 flex flex-col gap-2 font-heading text-[24px] font-bold max-md:text-[19px]">
           {OUTCOME_ROWS.map((label) => (
             <div key={label} className="flex items-center justify-between gap-3 border-b border-white/10 pb-2 last:border-0">
               <dt className="uppercase">{label}</dt>

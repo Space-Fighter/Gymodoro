@@ -26,7 +26,9 @@ function App() {
             <Route
               path="/"
               element={
-                <ProtectedRoute>
+                // Signed-out visitors see the landing page at "/" itself, so the homepage URL
+                // that search engines index has the real content (no client-side redirect).
+                <ProtectedRoute fallback={<Welcome />}>
                   <Timer />
                 </ProtectedRoute>
               }

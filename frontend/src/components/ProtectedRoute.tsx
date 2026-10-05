@@ -3,9 +3,11 @@ import { useAuth } from "@/hooks/useAuth";
 
 interface Props {
   children: React.ReactNode;
+  /** Rendered in place (URL unchanged) for signed-out visitors, instead of redirecting to /welcome. */
+  fallback?: React.ReactNode;
 }
 
-export default function ProtectedRoute({ children }: Props) {
+export default function ProtectedRoute({ children, fallback }: Props) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -17,7 +19,7 @@ export default function ProtectedRoute({ children }: Props) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/welcome" replace />;
+    return fallback ? <>{fallback}</> : <Navigate to="/welcome" replace />;
   }
 
   return <>{children}</>;

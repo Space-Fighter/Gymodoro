@@ -38,8 +38,8 @@ const GALLERY_ITEMS: GalleryItem[] = [
 
 function GalleryCard({ item }: { item: GalleryItem }) {
   return (
-    <GlassArticle className="h-full w-[90vw] !gap-3">
-      <div className="flex min-h-0 flex-1 items-center justify-center">
+    <GlassArticle className="h-full w-[90vw] max-md:h-auto max-md:w-[84vw] !gap-3">
+      <div className="flex min-h-0 flex-1 items-center justify-center max-md:min-h-[150px] max-md:flex-none">
         {/* object-contain: the whole screen is always visible, never cropped. */}
         <img
           src={item.image.src}
@@ -56,11 +56,11 @@ function GalleryCard({ item }: { item: GalleryItem }) {
   );
 }
 
-/** Section 03 — the product: pinned row of large, uncropped product screens. */
+/** Section 04 — the product: pinned row of large, uncropped product screens. */
 export default function GallerySection() {
   return (
     <PinnedRow
-      kicker="03 — the product"
+      kicker="04 — the product"
       kickerColor="#9aa3b5"
       title="See it in the app."
     >

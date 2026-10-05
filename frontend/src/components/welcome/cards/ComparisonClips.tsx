@@ -53,7 +53,7 @@ export default function ComparisonClips() {
           Pomodoro timer + built-in workouts
         </span>
         <h1 className="m-0 font-heading text-[clamp(38px,7vw,84px)] leading-[0.95] font-extrabold tracking-[-0.03em] text-white [text-shadow:0_4px_30px_rgba(0,0,0,.5)]">
-          The focus timer that turns every break into a workout.
+          Stay productive and fit.
         </h1>
         <p className="m-0 max-w-[58ch] text-[clamp(17px,2vw,21px)] leading-[1.55] text-white/90 [text-shadow:0_1px_8px_rgba(0,0,0,.5)]">
           Work in 25-minute blocks. When the timer rings, Gymodoro hands you a 5-minute exercise to do right
@@ -75,7 +75,7 @@ export default function ComparisonClips() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 sm:grid-cols-2">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 md:grid-cols-2">
         <Clip src={PROBLEM_VIDEO_MP4}>
           <div>
             <h2 className="m-0 mb-3 font-heading text-[clamp(24px,3vw,32px)] font-extrabold tracking-[-0.02em] text-white">

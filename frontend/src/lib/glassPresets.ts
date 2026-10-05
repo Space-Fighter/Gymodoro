@@ -21,6 +21,9 @@ export const GLASS_WELCOME_CARD: LiquidGlassOptions = liquidGlass.welcomeCard;
 /** Welcome page navbar + footer bars (transparent). Pair with `.glass-clear`. */
 export const GLASS_WELCOME_BAR: LiquidGlassOptions = liquidGlass.welcomeBar;
 
+/** Phone bottom navigation bar: lower chroma + backdrop blur so content scrolling behind it stays unreadable-but-calm. Pair with `.glass-tight`. */
+export const GLASS_BOTTOM_BAR: LiquidGlassOptions = liquidGlass.bottomBar;
+
 /** Push the `dressing` block onto :root as CSS variables read by `.glass*` in index.css. */
 function applyDressing() {
   const root = document.documentElement;

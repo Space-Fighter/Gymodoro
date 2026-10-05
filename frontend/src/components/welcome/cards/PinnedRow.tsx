@@ -22,7 +22,7 @@ export default function PinnedRow({
 
   return (
     <section ref={sectionRef} className="relative">
-      <div className="sticky top-0 flex h-screen min-h-[560px] flex-col pt-[68px] pb-5">
+      <div className="sticky top-0 flex h-screen min-h-[560px] flex-col pt-[68px] pb-5 max-md:static max-md:h-auto max-md:min-h-0 max-md:pt-16 max-md:pb-8">
         <div className="flex flex-col gap-1.5 px-[5vw] pb-3">
           <div className="flex items-center gap-3.5">
             <div className="font-mono text-[11px] tracking-[0.2em] uppercase" style={{ color: kickerColor }}>
@@ -37,10 +37,10 @@ export default function PinnedRow({
           </h2>
         </div>
 
-        <div className="flex min-h-0 flex-1 overflow-x-hidden">
+        <div className="flex min-h-0 flex-1 overflow-x-clip max-md:flex-none">
           <div
             ref={trackRef}
-            className="relative flex h-full items-stretch gap-[clamp(16px,2vw,28px)] px-[5vw] will-change-transform"
+            className="relative flex h-full items-stretch gap-[clamp(16px,2vw,28px)] px-[5vw] will-change-transform max-md:h-auto max-md:w-full max-md:flex-col max-md:gap-5 max-md:px-[5vw] max-md:[&>*]:!h-auto max-md:[&>*]:!w-full"
           >
             {children}
           </div>
