@@ -483,6 +483,31 @@ export default function Timer({
   });
 
   const isMobile = useIsMobile();
+
+  // Mobile: swipe horizontally on the timer view to move between
+  // Focus / Short Break / Long Break (same effect as tapping the mode dots).
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const swipeEnabled = isMobile && activeTab === "timer";
+  const handleSwipeStart = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (e.touches.length !== 1 || target.closest("input, iframe, [data-no-swipe]")) {
+      swipeStartRef.current = null;
+      return;
+    }
+    swipeStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+  const handleSwipeEnd = (e: React.TouchEvent) => {
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+    if (!start) return;
+    const dx = e.changedTouches[0].clientX - start.x;
+    const dy = e.changedTouches[0].clientY - start.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const idx = modes.findIndex((m) => m.id === timerMode);
+    const next = modes[idx + (dx < 0 ? 1 : -1)];
+    if (next) switchMode(next.id);
+  };
+
   const contentLeft = isMobile ? "0px" : sidebarOpen ? "260px" : "90px";
   const logoutGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
   const collapsedToggleGlassRef = useLiquidGlass<HTMLButtonElement>(GLASS_TIGHT);
@@ -559,7 +584,11 @@ export default function Timer({
       )}
 
       {/* Main Content Area */}
-      <div className="relative z-10 h-screen w-full max-md:h-[100svh]">
+      <div
+        className="relative z-10 h-screen w-full max-md:h-[100svh]"
+        onTouchStart={swipeEnabled ? handleSwipeStart : undefined}
+        onTouchEnd={swipeEnabled ? handleSwipeEnd : undefined}
+      >
         {/* Timer View */}
         {activeTab === "timer" && (
           <>
