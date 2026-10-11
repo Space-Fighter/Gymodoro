@@ -2,28 +2,17 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import type { SessionListResponse, Session } from "@/types/session";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
 export function useSessions(limit = 20) {
-  const { getAccessToken } = useAuth();
+  const { authFetch } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchSessions = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${API_URL}/api/sessions?limit=${limit}`, {
-        credentials: "include",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await authFetch(`/api/sessions?limit=${limit}`);
       if (!response.ok) {
         throw new Error("Failed to fetch sessions");
       }
@@ -35,7 +24,7 @@ export function useSessions(limit = 20) {
     } finally {
       setLoading(false);
     }
-  }, [limit, getAccessToken]);
+  }, [limit, authFetch]);
 
   useEffect(() => {
     // Legitimate external-system sync (network fetch), not derived state.

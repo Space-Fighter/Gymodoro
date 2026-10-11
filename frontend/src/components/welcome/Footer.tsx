@@ -1,10 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import logo from "@/assets/brand/gymodoro-logo.png";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 import { GLASS_WELCOME_BAR } from "@/lib/glassPresets";
 
 export default function Footer() {
   const glassRef = useLiquidGlass<HTMLElement>(GLASS_WELCOME_BAR);
+  // Section anchors live on the landing page; from the blog they need the "/" prefix.
+  const home = useLocation().pathname === "/" ? "" : "/";
 
   return (
     <footer ref={glassRef} className="glass-clear border-t border-white/10 pt-3 text-white">
@@ -28,10 +30,11 @@ export default function Footer() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-white/80 max-md:gap-x-4 max-md:pb-4">
-            <a href="#problem" className="transition-colors hover:text-white">The problem</a>
-            <a href="#solution" className="transition-colors hover:text-white">The fix</a>
-            <a href="#facts" className="transition-colors hover:text-white">The science</a>
-            <a href="#gallery" className="transition-colors hover:text-white">The app</a>
+            <a href={`${home}#problem`} className="transition-colors hover:text-white">The problem</a>
+            <a href={`${home}#solution`} className="transition-colors hover:text-white">The fix</a>
+            <a href={`${home}#facts`} className="transition-colors hover:text-white">The science</a>
+            <a href={`${home}#gallery`} className="transition-colors hover:text-white">The app</a>
+            <Link to="/blog" className="transition-colors hover:text-white">Blog</Link>
             <Link to="/signin" className="transition-colors md:hover:text-white">Sign in</Link>
           </div>
         </div>

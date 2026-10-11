@@ -50,17 +50,17 @@ model RefreshToken {
 }
 
 model Exercise {
-  id               String   @id @default(uuid())
-  name             String   @unique
-  description      String
-  mechanic         String? // "compound" | "isolation"
-  force            String? // "push" | "pull" | "static"
-  videoUrl         String?
-  gifUrl           String?
-  muscleDiagramUrl String?
-  caloriesPerMinute Float   @default(5)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                String   @id @default(uuid())
+  name              String   @unique
+  description       String
+  mechanic          String? // "compound" | "isolation"
+  force             String? // "push" | "pull" | "static"
+  videoUrl          String?
+  gifUrl            String?
+  muscleDiagramUrl  String?
+  caloriesPerMinute Float    @default(5)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   difficultyId String
   difficulty   Difficulty @relation(fields: [difficultyId], references: [id])
@@ -140,19 +140,26 @@ model ExerciseExerciseType {
 }
 
 model Session {
-  id             String    @id @default(uuid())
-  userId         String
-  User           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workDuration   Int       @default(1500)
-  breakDuration  Int       @default(300)
-  exerciseId     String?
-  Exercise       Exercise? @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
-  status         String    @default("in_progress")
-  startedAt      DateTime  @default(now())
-  breakStartedAt DateTime?
-  completedAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id              String    @id @default(uuid())
+  userId          String
+  User            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workDuration    Int       @default(1500)
+  breakDuration   Int       @default(300)
+  exerciseId      String?
+  Exercise        Exercise? @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  status          String    @default("in_progress")
+  startedAt       DateTime  @default(now())
+  breakStartedAt  DateTime?
+  completedAt     DateTime?
+  // Live timer state, so an unfinished session can be resumed on any device.
+  // While a phase is counting down `phaseEndsAt` is its wall-clock deadline;
+  // while paused it is null and `pausedRemaining` holds the seconds left.
+  breakMode       String? // "short" | "long", set when the break starts
+  phaseEndsAt     DateTime?
+  pausedRemaining Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([userId, startedAt])
+  @@index([userId, status])
 }

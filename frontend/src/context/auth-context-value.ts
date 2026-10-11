@@ -21,6 +21,7 @@ export interface AuthContextType {
   deleteAccount: (confirm: string) => Promise<void>;
   checkAuth: () => Promise<void>;
   getAccessToken: () => string | null;
+  authFetch: (path: string, init?: RequestInit) => Promise<Response>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

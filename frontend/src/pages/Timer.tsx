@@ -24,12 +24,15 @@ import { useTimerPopout } from "@/hooks/useTimerPopout";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 import { GLASS_TIGHT } from "@/lib/glassPresets";
 import logo from "@/assets/brand/gymodoro-logo.png";
+import type { ActiveSession } from "@/types/session";
 
 const BACKGROUND_STORAGE_KEY = "gymodoro-background";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 type TabType = "timer" | "workout" | "background" | "stats" | "settings";
 type TimerMode = "focus" | "short" | "long";
+// The backend Session for the pomodoro cycle in flight. `id` is null until
+// its POST resolves; queued updates read it at send time (see enqueueSync).
+type SessionHandle = { id: string | null; phase: "focus" | "break" };
 
 // Standard Pomodoro cycle: focus -> short break, repeated, but every 4th
 // focus session is followed by a long break instead. Breaks always return
@@ -52,7 +55,7 @@ export default function Timer({
   longBreakMinutes = 15,
 }: Props) {
   const navigate = useNavigate();
-  const { logout, getAccessToken } = useAuth();
+  const { logout, authFetch } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("timer");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [timerMode, setTimerMode] = useState<TimerMode>("focus");
@@ -61,8 +64,17 @@ export default function Timer({
   const [activityIdx, setActivityIdx] = useState(0);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   // Tracks the backend Session for the pomodoro cycle currently in flight, so
-  // the stats endpoint has real data to aggregate instead of always zeros.
-  const activeSessionRef = useRef<{ id: string; phase: "focus" | "break" } | null>(null);
+  // the stats endpoint has real data and the timer can be resumed elsewhere.
+  const activeSessionRef = useRef<SessionHandle | null>(null);
+  // Every session write is chained onto this so they reach the server in
+  // the order they happened (e.g. a quick pause -> resume).
+  const syncChainRef = useRef<Promise<unknown>>(Promise.resolve());
+  // Time added with the +1/+5/+10 buttons during the current phase, so the
+  // recorded duration is what was actually spent.
+  const phaseAddedSecondsRef = useRef(0);
+  // Exercise attached to a resumed break — preferred over a random pick
+  // once the exercise list finishes loading.
+  const restoredExerciseIdRef = useRef<string | null>(null);
   const [backgroundId, setBackgroundId] = useState(() => {
     try {
       return localStorage.getItem(BACKGROUND_STORAGE_KEY) || DEFAULT_BACKGROUND_ID;
@@ -88,7 +100,7 @@ export default function Timer({
   // Set by finishNow just before it forces `remaining` to 0, so the
   // phase-completion effect below records the time actually spent instead
   // of the full phase duration. Null means "completed naturally in full."
-  const finishEarlyMinutesRef = useRef<number | null>(null);
+  const finishEarlySecondsRef = useRef<number | null>(null);
   // Set by the phase-completion effect right before it advances to the next
   // phase, and read (then cleared) by the countdown effect right below it.
   // Distinguishes "the next phase is starting because a phase just legitimately
@@ -110,9 +122,13 @@ export default function Timer({
   // and render must stay pure/idempotent.
   useEffect(() => {
     if (exercises.length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActivityIdx(Math.floor(Math.random() * exercises.length));
+      const restoredIdx = exercises.findIndex((e) => e.id === restoredExerciseIdRef.current);
+      setActivityIdx(
+        restoredIdx >= 0 ? restoredIdx : Math.floor(Math.random() * exercises.length)
+      );
     }
+    // Only re-pick when the list itself (re)loads, not on every identity change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercises.length]);
 
   useEffect(() => {
@@ -139,92 +155,134 @@ export default function Timer({
   const isFocusMode = timerMode === "focus";
 
   // Session persistence: mirrors the timer's own state into the backend so
-  // GET /api/sessions/stats has real data. Best-effort — failures here
-  // shouldn't interrupt the (purely client-side) countdown itself.
-  const authedFetch = useCallback(
-    (path: string, init?: RequestInit) => {
-      const token = getAccessToken();
-      if (!token) return null;
-      return fetch(`${API_URL}${path}`, {
-        ...init,
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          ...init?.headers,
-        },
-      });
+  // GET /api/sessions/stats has real data, and so an unfinished session can
+  // be resumed (after a reload, or on another device) via
+  // GET /api/sessions/active. Every start / pause / resume / add-time is
+  // written, so the server always knows the phase's deadline even if the
+  // tab is closed without warning. Best-effort — failures here shouldn't
+  // interrupt the (purely client-side) countdown itself.
+  const enqueueSync = useCallback(
+    (handle: SessionHandle, task: (id: string) => Promise<Response>) => {
+      syncChainRef.current = syncChainRef.current
+        .then(async () => {
+          if (!handle.id) return;
+          const res = await task(handle.id);
+          // 409: the session was already finished elsewhere (another device,
+          // or replaced by a newer session) — stop tracking it here.
+          if (res.status === 409 && activeSessionRef.current === handle) {
+            activeSessionRef.current = null;
+          }
+        })
+        .catch(() => {});
     },
-    [getAccessToken]
+    []
   );
 
-  const startFocusSession = useCallback(async () => {
-    const res = authedFetch("/api/sessions", {
-      method: "POST",
-      body: JSON.stringify({
-        workDuration: focusMinutes,
-        breakDuration: timerMode === "long" ? longBreakMinutes : shortBreakMinutes,
-      }),
-    });
-    if (!res) return;
-    try {
-      const response = await res;
-      if (!response.ok) return;
-      const data = await response.json();
-      activeSessionRef.current = { id: data.session.id, phase: "focus" };
-    } catch {
-      // Best-effort: keep the countdown running even if this failed.
-    }
-  }, [authedFetch, focusMinutes, longBreakMinutes, shortBreakMinutes, timerMode]);
-
-  // `workMinutesOverride` records the actual time spent, not the full phase
-  // duration — used when a phase is finished early (see finishNow below).
-  const beginBreakForActiveSession = useCallback(
-    (workMinutesOverride?: number) => {
-      const active = activeSessionRef.current;
-      if (!active || active.phase !== "focus") return;
-      if (workMinutesOverride !== undefined) {
-        const workRes = authedFetch(`/api/sessions/${active.id}`, {
+  const patchSession = useCallback(
+    (handle: SessionHandle, path: string, body: Record<string, unknown>) =>
+      enqueueSync(handle, (id) =>
+        authFetch(`/api/sessions/${id}${path}`, {
           method: "PATCH",
-          body: JSON.stringify({ workDuration: workMinutesOverride }),
-        });
-        if (workRes) workRes.catch(() => {});
-      }
-      const res = authedFetch(`/api/sessions/${active.id}/start-break`, { method: "PATCH" });
-      if (res) res.catch(() => {});
-      activeSessionRef.current = { id: active.id, phase: "break" };
-    },
-    [authedFetch]
+          body: JSON.stringify(body),
+        })
+      ),
+    [authFetch, enqueueSync]
   );
 
-  // `breakMinutesOverride` records the actual time spent, not the full phase
-  // duration — used when a phase is finished early (see finishNow below).
-  const completeActiveSession = useCallback(
-    (breakMinutesOverride?: number) => {
-      const active = activeSessionRef.current;
-      if (!active) return;
-      const body: Record<string, unknown> = { status: "completed" };
-      if (breakMinutesOverride !== undefined) body.breakDuration = breakMinutesOverride;
-      const res = authedFetch(`/api/sessions/${active.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(body),
-      });
-      if (res) res.catch(() => {});
-      activeSessionRef.current = null;
+  const startFocusSession = useCallback(
+    (remainingSeconds: number, running: boolean) => {
+      const handle: SessionHandle = { id: null, phase: "focus" };
+      activeSessionRef.current = handle;
+      syncChainRef.current = syncChainRef.current
+        .then(async () => {
+          const res = await authFetch("/api/sessions", {
+            method: "POST",
+            body: JSON.stringify({
+              workDuration: focusMinutes,
+              breakDuration: shortBreakMinutes,
+              remainingSeconds,
+              running,
+            }),
+          });
+          if (!res.ok) throw new Error("Failed to start session");
+          const data = await res.json();
+          handle.id = data.session.id;
+        })
+        .catch(() => {
+          // Best-effort: keep the countdown running even if this failed.
+          if (activeSessionRef.current === handle) activeSessionRef.current = null;
+        });
     },
-    [authedFetch]
+    [authFetch, focusMinutes, shortBreakMinutes]
+  );
+
+  // Pause / resume / add-time for the session in flight.
+  const syncTimerState = useCallback(
+    (running: boolean, remainingSeconds: number, extra?: Record<string, unknown>) => {
+      const handle = activeSessionRef.current;
+      if (!handle) return;
+      patchSession(handle, "", { running, remainingSeconds, ...extra });
+    },
+    [patchSession]
+  );
+
+  // `workSeconds` is the time actually spent focusing (shorter when finished
+  // early, longer when time was added), not the configured duration.
+  const beginBreakForActiveSession = useCallback(
+    (opts: {
+      workSeconds: number;
+      breakMode: "short" | "long";
+      breakSeconds: number;
+      running: boolean;
+      exerciseId?: string;
+    }) => {
+      const handle = activeSessionRef.current;
+      if (!handle || handle.phase !== "focus") return;
+      handle.phase = "break";
+      patchSession(handle, "/start-break", {
+        workDurationSeconds: opts.workSeconds,
+        breakDurationSeconds: opts.breakSeconds,
+        breakMode: opts.breakMode,
+        running: opts.running,
+        exerciseId: opts.exerciseId,
+      });
+    },
+    [patchSession]
+  );
+
+  // `breakSeconds` is the time actually spent on the break.
+  const completeActiveSession = useCallback(
+    (breakSeconds: number) => {
+      const handle = activeSessionRef.current;
+      if (!handle) return;
+      activeSessionRef.current = null;
+      patchSession(handle, "", { status: "completed", breakDurationSeconds: breakSeconds });
+    },
+    [patchSession]
   );
 
   const abandonActiveSession = useCallback(() => {
-    const active = activeSessionRef.current;
-    if (!active) return;
-    const res = authedFetch(`/api/sessions/${active.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: "abandoned" }),
-    });
-    if (res) res.catch(() => {});
+    const handle = activeSessionRef.current;
+    if (!handle) return;
     activeSessionRef.current = null;
-  }, [authedFetch]);
+    patchSession(handle, "", { status: "abandoned" });
+  }, [patchSession]);
+
+  // Seconds left on the clock right now — read from the deadline while
+  // running, since `remaining` is only refreshed every 250ms.
+  const liveRemaining = useCallback(
+    () =>
+      deadlineRef.current !== null
+        ? Math.max(0, Math.round((deadlineRef.current - Date.now()) / 1000))
+        : remaining,
+    [remaining]
+  );
+  // Time actually spent in the current phase, given the seconds still left.
+  const elapsedSeconds = useCallback(
+    (secsLeft: number) =>
+      Math.max(0, currentMode.duration * 60 + phaseAddedSecondsRef.current - secsLeft),
+    [currentMode.duration]
+  );
 
   const cancelScheduledChime = useCallback(() => {
     cancelChimeRef.current?.();
@@ -334,15 +392,13 @@ export default function Timer({
     // reuse this exact completion path, so it behaves identically to a
     // natural 00:00 — but the session should record actual time spent, not
     // the full phase duration.
-    const earlyMinutes = finishEarlyMinutesRef.current;
-    finishEarlyMinutesRef.current = null;
+    const earlySeconds = finishEarlySecondsRef.current;
+    finishEarlySecondsRef.current = null;
+    const phaseSeconds =
+      earlySeconds ?? currentMode.duration * 60 + phaseAddedSecondsRef.current;
+    phaseAddedSecondsRef.current = 0;
 
-    if (isFocusMode) {
-      beginBreakForActiveSession(earlyMinutes ?? undefined);
-      focusCountRef.current += 1;
-    } else {
-      completeActiveSession(earlyMinutes ?? undefined);
-    }
+    if (isFocusMode) focusCountRef.current += 1;
 
     // Auto-advance through the Pomodoro cycle: focus -> short break (long
     // break every 4th focus session) -> focus -> ... Whether the next phase
@@ -350,25 +406,36 @@ export default function Timer({
     // setting; when it's off (or finishNow suppressed it) the countdown just
     // resets to the next phase, paused, same as a manual mode switch.
     const nextId = getNextTimerMode(timerMode, focusCountRef.current);
-    const nextModeDef = modes.find((m) => m.id === nextId);
-    if (!nextModeDef) {
-      setRunning(false);
-      return;
-    }
+    const nextModeDef = modes.find((m) => m.id === nextId)!;
     const suppressAutoStart = suppressAutoStartRef.current;
     suppressAutoStartRef.current = false;
     const autoStart = !suppressAutoStart && getAutoStartBreaksEnabled();
+
+    if (isFocusMode) {
+      beginBreakForActiveSession({
+        workSeconds: phaseSeconds,
+        breakMode: nextId === "long" ? "long" : "short",
+        breakSeconds: nextModeDef.duration * 60,
+        running: autoStart,
+        exerciseId: currentActivity?.id,
+      });
+    } else {
+      completeActiveSession(phaseSeconds);
+    }
+
     advancingAfterCompletionRef.current = true;
     setTimerMode(nextId);
     setRemaining(nextModeDef.duration * 60);
     setRunning(autoStart);
-    if (autoStart && nextId === "focus") startFocusSession();
+    if (autoStart && nextId === "focus") startFocusSession(nextModeDef.duration * 60, true);
   }, [
     remaining,
     running,
     isFocusMode,
     timerMode,
     modes,
+    currentMode.duration,
+    currentActivity?.id,
     beginBreakForActiveSession,
     completeActiveSession,
     startFocusSession,
@@ -395,7 +462,7 @@ export default function Timer({
     // completion effect's own `if (!cancelChimeRef.current)` guard then sees
     // this is already set and skips re-triggering it.
     cancelChimeRef.current = playAlarmChime();
-    finishEarlyMinutesRef.current = (currentMode.duration * 60 - remaining) / 60;
+    finishEarlySecondsRef.current = elapsedSeconds(liveRemaining());
     suppressAutoStartRef.current = true;
     // If the timer was paused, this call's own setRunning(true) below flips
     // `running` immediately, which would make the countdown effect re-run
@@ -407,20 +474,18 @@ export default function Timer({
     advancingAfterCompletionRef.current = true;
     setRemaining(0);
     setRunning(true);
-  }, [currentMode.duration, remaining, cancelScheduledChime]);
+  }, [cancelScheduledChime, elapsedSeconds, liveRemaining]);
 
   const toggleStart = useCallback(() => {
     const next = !running;
-    if (
-      next &&
-      isFocusMode &&
-      remaining === currentMode.duration * 60 &&
-      !activeSessionRef.current
-    ) {
-      startFocusSession();
+    const secsLeft = liveRemaining();
+    if (next && isFocusMode && !activeSessionRef.current) {
+      startFocusSession(secsLeft, true);
+    } else {
+      syncTimerState(next, secsLeft);
     }
     setRunning(next);
-  }, [running, isFocusMode, remaining, currentMode.duration, startFocusSession]);
+  }, [running, isFocusMode, liveRemaining, startFocusSession, syncTimerState]);
 
   const switchMode = (id: TimerMode) => {
     if (timerInterval.current) clearInterval(timerInterval.current);
@@ -431,11 +496,29 @@ export default function Timer({
     const mode = modes.find((m) => m.id === id);
     if (mode) {
       const activePhase = activeSessionRef.current?.phase;
+      const spent = elapsedSeconds(liveRemaining());
       if (isFocusMode && id !== "focus" && activePhase === "focus") {
-        beginBreakForActiveSession();
+        beginBreakForActiveSession({
+          workSeconds: spent,
+          breakMode: id,
+          breakSeconds: mode.duration * 60,
+          running: false,
+          exerciseId: currentActivity?.id,
+        });
       } else if (!isFocusMode && id === "focus" && activePhase === "break") {
-        completeActiveSession();
+        completeActiveSession(spent);
+      } else if (activePhase) {
+        // Same phase (e.g. short <-> long break, or re-tapping the current
+        // mode): the clock resets to the new mode's full duration, paused.
+        syncTimerState(
+          false,
+          mode.duration * 60,
+          activePhase === "break"
+            ? { breakMode: id, breakDurationSeconds: mode.duration * 60 }
+            : undefined
+        );
       }
+      phaseAddedSecondsRef.current = 0;
       setTimerMode(id);
       setRemaining(mode.duration * 60);
       setRunning(false);
@@ -447,12 +530,14 @@ export default function Timer({
     // Same reasoning as switchMode above — silence any ringing alarm.
     cancelScheduledChime();
     if (activeSessionRef.current) abandonActiveSession();
+    phaseAddedSecondsRef.current = 0;
     setRemaining(currentMode.duration * 60);
     setRunning(false);
   };
 
   const addTime = (minutes: number) => {
     setRemaining((prev) => prev + minutes * 60);
+    phaseAddedSecondsRef.current += minutes * 60;
     // Keep the deadline in sync while running, otherwise the next tick would
     // immediately overwrite the added time.
     if (deadlineRef.current !== null) {
@@ -463,7 +548,155 @@ export default function Timer({
       const secsLeft = Math.max(0, (deadlineRef.current - Date.now()) / 1000);
       cancelChimeRef.current = scheduleAlarmChime(secsLeft);
     }
+    const handle = activeSessionRef.current;
+    if (handle) {
+      const total = currentMode.duration * 60 + phaseAddedSecondsRef.current;
+      syncTimerState(
+        running,
+        deadlineRef.current !== null ? liveRemaining() : remaining + minutes * 60,
+        handle.phase === "focus"
+          ? { workDurationSeconds: total }
+          : { breakDurationSeconds: total }
+      );
+    }
   };
+
+  // Resuming: adopt the server's copy of the unfinished session — on first
+  // load (reload, or opening the app on another device) and whenever this
+  // tab comes back into view, since the session may have been paused,
+  // advanced or finished on another device meanwhile.
+  const applyServerSession = (s: ActiveSession | null) => {
+    const local = activeSessionRef.current;
+    // This tab's own POST is still in flight; it will replace whatever the
+    // server has, so there's nothing to adopt yet.
+    if (local && local.id === null) return;
+
+    const goIdle = (mode: TimerMode) => {
+      const def = modes.find((m) => m.id === mode)!;
+      cancelScheduledChime();
+      phaseAddedSecondsRef.current = 0;
+      setTimerMode(mode);
+      setRemaining(def.duration * 60);
+      setRunning(false);
+    };
+
+    if (!s) {
+      // Finished or reset on another device.
+      if (local) {
+        activeSessionRef.current = null;
+        goIdle("focus");
+      }
+      return;
+    }
+
+    const phase = s.status === "break" ? "break" : "focus";
+    const mode: TimerMode =
+      phase === "focus"
+        ? "focus"
+        : s.breakMode ?? (s.breakDuration >= longBreakMinutes * 60 ? "long" : "short");
+    const modeDef = modes.find((m) => m.id === mode)!;
+    if (s.exerciseId) {
+      restoredExerciseIdRef.current = s.exerciseId;
+      const idx = exercises.findIndex((e) => e.id === s.exerciseId);
+      if (idx >= 0) setActivityIdx(idx);
+    }
+
+    if (s.running && s.remainingSeconds === 0) {
+      // The phase ran out while the user was away. Record it as finished
+      // and land on the next phase, paused — no point ringing an alarm or
+      // auto-starting a break for someone who isn't looking.
+      const handle: SessionHandle = { id: s.id, phase };
+      activeSessionRef.current = handle;
+      if (phase === "focus") {
+        focusCountRef.current += 1;
+        const nextId = getNextTimerMode("focus", focusCountRef.current);
+        const nextDef = modes.find((m) => m.id === nextId)!;
+        beginBreakForActiveSession({
+          workSeconds: s.workDuration,
+          breakMode: nextId === "long" ? "long" : "short",
+          breakSeconds: nextDef.duration * 60,
+          running: false,
+          exerciseId: currentActivity?.id,
+        });
+        goIdle(nextId);
+      } else {
+        completeActiveSession(s.breakDuration);
+        goIdle("focus");
+      }
+      return;
+    }
+
+    // Already showing the same thing — don't nudge a running clock by the
+    // second or two of request latency.
+    if (
+      local?.id === s.id &&
+      local.phase === phase &&
+      timerMode === mode &&
+      running === s.running &&
+      Math.abs(liveRemaining() - s.remainingSeconds) <= 2
+    ) {
+      return;
+    }
+
+    activeSessionRef.current = { id: s.id, phase };
+    phaseAddedSecondsRef.current = Math.max(
+      0,
+      (phase === "focus" ? s.workDuration : s.breakDuration) - modeDef.duration * 60
+    );
+    if (timerMode !== mode || running !== s.running) cancelScheduledChime();
+    // If the clock keeps running in the same mode, the countdown effect won't
+    // re-run to re-anchor, so move the deadline (and its alarm) here.
+    if (deadlineRef.current !== null && s.running && timerMode === mode) {
+      deadlineRef.current = Date.now() + s.remainingSeconds * 1000;
+      cancelScheduledChime();
+      cancelChimeRef.current = scheduleAlarmChime(s.remainingSeconds);
+    }
+    setTimerMode(mode);
+    setRemaining(s.remainingSeconds);
+    setRunning(s.running);
+  };
+  // Latest closure for the listeners below, which subscribe once.
+  const applyServerSessionRef = useRef(applyServerSession);
+  useEffect(() => {
+    applyServerSessionRef.current = applyServerSession;
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadActiveSession = () => {
+      // Wait for this tab's own pending writes so we don't read back state
+      // they're about to change.
+      syncChainRef.current = syncChainRef.current
+        .then(async () => {
+          const res = await authFetch("/api/sessions/active");
+          if (!res.ok || cancelled) return;
+          const data: { session: ActiveSession | null } = await res.json();
+          if (!cancelled) applyServerSessionRef.current(data.session);
+        })
+        .catch(() => {});
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") loadActiveSession();
+    };
+    loadActiveSession();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", loadActiveSession);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", loadActiveSession);
+    };
+  }, [authFetch]);
+
+  // Keep the session's exercise in step with what the break view shows
+  // (Roll Dice, or picking one from the Workout Library), so calories in
+  // stats are for the exercise actually done.
+  const currentActivityId = currentActivity?.id;
+  useEffect(() => {
+    const handle = activeSessionRef.current;
+    if (!currentActivityId || !handle || handle.phase !== "break") return;
+    patchSession(handle, "", { exerciseId: currentActivityId });
+  }, [currentActivityId, patchSession]);
 
   const formatTime = (seconds: number) => {
     const s = Math.max(0, seconds);

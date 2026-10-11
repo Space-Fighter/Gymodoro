@@ -22,6 +22,65 @@ function normalizeDuration(val: unknown, defaultSec: number): number {
 }
 
 /**
+ * Reads an explicit seconds value (no minutes heuristic). Used by the timer,
+ * which always knows exact seconds — e.g. a 90s partial focus must not be
+ * mistaken for 90 minutes by normalizeDuration's <= 120 rule.
+ */
+function parseSeconds(val: unknown): number | undefined {
+  if (typeof val === 'number' && Number.isFinite(val) && val >= 0) {
+    return Math.round(val);
+  }
+  return undefined;
+}
+
+const ACTIVE_STATUSES = ['in_progress', 'break'];
+const TERMINAL_STATUSES = ['completed', 'skipped', 'abandoned'];
+// An unfinished session older than this is treated as forgotten rather than
+// resumed when the user comes back.
+const STALE_ACTIVE_SESSION_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Prisma data for the live timer state: a running phase stores its deadline,
+ * a paused one stores the seconds left.
+ */
+function timerStateData(running: boolean, remainingSeconds: number) {
+  return running
+    ? { phaseEndsAt: new Date(Date.now() + remainingSeconds * 1000), pausedRemaining: null }
+    : { phaseEndsAt: null, pausedRemaining: remainingSeconds };
+}
+
+type SessionTimerFields = {
+  status: string;
+  workDuration: number;
+  breakDuration: number;
+  phaseEndsAt: Date | null;
+  pausedRemaining: number | null;
+};
+
+/**
+ * Seconds left in the current phase, computed on the server so clients with
+ * skewed clocks still agree. Clients re-anchor their own deadline from this.
+ */
+function getRemainingSeconds(session: SessionTimerFields): number {
+  if (session.phaseEndsAt) {
+    return Math.max(0, Math.ceil((session.phaseEndsAt.getTime() - Date.now()) / 1000));
+  }
+  if (session.pausedRemaining !== null) return session.pausedRemaining;
+  return session.status === 'break' ? session.breakDuration : session.workDuration;
+}
+
+function serializeSession<T extends SessionTimerFields>(session: T) {
+  const active = ACTIVE_STATUSES.includes(session.status);
+  return {
+    ...session,
+    workMinutes: Math.round(session.workDuration / 60),
+    breakMinutes: Math.round(session.breakDuration / 60),
+    running: active && session.phaseEndsAt !== null,
+    remainingSeconds: active ? getRemainingSeconds(session) : 0,
+  };
+}
+
+/**
  * Formats minutes into human readable string e.g. "2h 30m" or "45m"
  */
 function formatMinutes(totalMinutes: number): string {
@@ -45,32 +104,44 @@ export async function createSession(req: Request, res: Response) {
       return res.status(401).json({ message: 'Authentication required.' });
     }
 
-    const { workDuration: rawWork, breakDuration: rawBreak } = req.body || {};
+    const { workDuration: rawWork, breakDuration: rawBreak, running, remainingSeconds } = req.body || {};
 
     const workDuration = normalizeDuration(rawWork, DEFAULT_WORK_DURATION_SEC);
     const breakDuration = normalizeDuration(rawBreak, DEFAULT_BREAK_DURATION_SEC);
+    const remaining = parseSeconds(remainingSeconds) ?? workDuration;
+    const now = new Date();
 
-    const session = await prisma.session.create({
-      data: {
-        userId,
-        workDuration,
-        breakDuration,
-        status: 'in_progress',
-        exerciseId: null, // Important: exercise is only assigned when work period finishes
-        startedAt: new Date(),
-      },
-      include: {
-        Exercise: true,
-      },
-    });
+    // Only one session can be live per user — starting a new one (possibly on
+    // another device) closes out whatever was left unfinished. A session whose
+    // focus phase already ended still counts as a finished pomodoro.
+    const [, , session] = await prisma.$transaction([
+      prisma.session.updateMany({
+        where: { userId, status: 'in_progress' },
+        data: { status: 'abandoned', completedAt: now, phaseEndsAt: null, pausedRemaining: null },
+      }),
+      prisma.session.updateMany({
+        where: { userId, status: 'break' },
+        data: { status: 'completed', completedAt: now, phaseEndsAt: null, pausedRemaining: null },
+      }),
+      prisma.session.create({
+        data: {
+          userId,
+          workDuration,
+          breakDuration,
+          status: 'in_progress',
+          exerciseId: null, // Important: exercise is only assigned when work period finishes
+          startedAt: now,
+          ...timerStateData(running !== false, remaining),
+        },
+        include: {
+          Exercise: true,
+        },
+      }),
+    ]);
 
     return res.status(201).json({
       message: 'Pomodoro session started successfully.',
-      session: {
-        ...session,
-        workMinutes: Math.round(session.workDuration / 60),
-        breakMinutes: Math.round(session.breakDuration / 60),
-      },
+      session: serializeSession(session),
     });
   } catch (error) {
     console.error('Error creating session:', error);
@@ -106,11 +177,34 @@ export async function startBreak(req: Request, res: Response) {
       return res.status(403).json({ message: 'You do not have permission to access this session.' });
     }
 
-    if (session.status === 'completed' || session.status === 'abandoned') {
-      return res.status(400).json({
+    if (TERMINAL_STATUSES.includes(session.status)) {
+      return res.status(409).json({
         message: `Cannot start break on a session that is already marked as '${session.status}'.`,
       });
     }
+
+    // Idempotent: two devices (or a resumed tab) may both report the end of
+    // the same focus period — don't roll a second exercise or restart the break.
+    if (session.status === 'break') {
+      return res.status(200).json({
+        message: 'Break already started.',
+        session: serializeSession(session),
+        exercise: session.Exercise,
+      });
+    }
+
+    const {
+      workDurationSeconds,
+      breakDuration: rawBreak,
+      breakDurationSeconds,
+      breakMode,
+      running,
+      exerciseId: requestedExerciseId,
+    } = req.body || {};
+    const actualWork = parseSeconds(workDurationSeconds);
+    const breakDuration =
+      parseSeconds(breakDurationSeconds) ??
+      (rawBreak !== undefined ? normalizeDuration(rawBreak, session.breakDuration) : session.breakDuration);
 
     // Optional category preference from body or query
     const category = typeof req.body?.category === 'string'
@@ -119,8 +213,14 @@ export async function startBreak(req: Request, res: Response) {
         ? req.query.category
         : undefined;
 
-    // Direct invocation of the shared helper (no internal HTTP call)
-    const exercise = await getRandomExercise(category);
+    // Prefer the exercise the client is already showing for this break; fall
+    // back to a random pick. Direct invocation of the shared helper (no
+    // internal HTTP call).
+    const requestedExercise =
+      typeof requestedExerciseId === 'string'
+        ? await prisma.exercise.findUnique({ where: { id: requestedExerciseId } })
+        : null;
+    const exercise = requestedExercise ?? (await getRandomExercise(category));
 
     const updatedSession = await prisma.session.update({
       where: { id },
@@ -128,6 +228,10 @@ export async function startBreak(req: Request, res: Response) {
         status: 'break',
         exerciseId: exercise ? exercise.id : session.exerciseId,
         breakStartedAt: new Date(),
+        breakDuration,
+        breakMode: breakMode === 'long' || breakMode === 'short' ? breakMode : null,
+        ...(actualWork !== undefined ? { workDuration: actualWork } : {}),
+        ...timerStateData(running === true, breakDuration),
       },
       include: {
         Exercise: true,
@@ -136,11 +240,7 @@ export async function startBreak(req: Request, res: Response) {
 
     return res.status(200).json({
       message: 'Break started and exercise assigned.',
-      session: {
-        ...updatedSession,
-        workMinutes: Math.round(updatedSession.workDuration / 60),
-        breakMinutes: Math.round(updatedSession.breakDuration / 60),
-      },
+      session: serializeSession(updatedSession),
       exercise: updatedSession.Exercise,
     });
   } catch (error) {
@@ -158,7 +258,17 @@ export async function updateSession(req: Request, res: Response) {
   try {
     const userId = req.userId;
     const id = req.params.id as string;
-    const { status, workDuration: rawWork, breakDuration: rawBreak, exerciseId } = req.body || {};
+    const {
+      status,
+      workDuration: rawWork,
+      breakDuration: rawBreak,
+      workDurationSeconds,
+      breakDurationSeconds,
+      exerciseId,
+      breakMode,
+      running,
+      remainingSeconds,
+    } = req.body || {};
 
     if (!userId) {
       return res.status(401).json({ message: 'Authentication required.' });
@@ -184,18 +294,45 @@ export async function updateSession(req: Request, res: Response) {
       return res.status(403).json({ message: 'You do not have permission to modify this session.' });
     }
 
+    // A finished session is final — a stale device trying to keep ticking it
+    // gets a 409 so it knows to drop its local copy.
+    if (TERMINAL_STATUSES.includes(session.status)) {
+      return res.status(409).json({
+        message: `Session is already '${session.status}' and can no longer be modified.`,
+      });
+    }
+
     const dataToUpdate: any = {};
     if (status) {
       dataToUpdate.status = status;
-      if (status === 'completed' || status === 'skipped' || status === 'abandoned') {
+      if (TERMINAL_STATUSES.includes(status)) {
         dataToUpdate.completedAt = new Date();
+        dataToUpdate.phaseEndsAt = null;
+        dataToUpdate.pausedRemaining = null;
       }
     }
 
-    if (rawWork !== undefined) {
+    // Pause / resume / add-time: the client reports whether the phase is
+    // counting down and how many seconds it has left.
+    const remaining = parseSeconds(remainingSeconds);
+    if (typeof running === 'boolean' && remaining !== undefined && !TERMINAL_STATUSES.includes(status)) {
+      Object.assign(dataToUpdate, timerStateData(running, remaining));
+    }
+
+    if (breakMode === 'short' || breakMode === 'long') {
+      dataToUpdate.breakMode = breakMode;
+    }
+
+    const workSec = parseSeconds(workDurationSeconds);
+    const breakSec = parseSeconds(breakDurationSeconds);
+    if (workSec !== undefined) {
+      dataToUpdate.workDuration = workSec;
+    } else if (rawWork !== undefined) {
       dataToUpdate.workDuration = normalizeDuration(rawWork, session.workDuration);
     }
-    if (rawBreak !== undefined) {
+    if (breakSec !== undefined) {
+      dataToUpdate.breakDuration = breakSec;
+    } else if (rawBreak !== undefined) {
       dataToUpdate.breakDuration = normalizeDuration(rawBreak, session.breakDuration);
     }
     if (exerciseId !== undefined) {
@@ -212,15 +349,55 @@ export async function updateSession(req: Request, res: Response) {
 
     return res.status(200).json({
       message: 'Session updated successfully.',
-      session: {
-        ...updatedSession,
-        workMinutes: Math.round(updatedSession.workDuration / 60),
-        breakMinutes: Math.round(updatedSession.breakDuration / 60),
-      },
+      session: serializeSession(updatedSession),
     });
   } catch (error) {
     console.error('Error updating session:', error);
     return res.status(500).json({ error: 'Failed to update session.' });
+  }
+}
+
+/**
+ * Current unfinished session, if any
+ * GET /api/sessions/active
+ * Lets a returning user (on any device) pick the timer up where it was.
+ * `remainingSeconds` is computed server-side; it is 0 when a running phase's
+ * deadline passed while the user was away — the client finalizes that phase.
+ */
+export async function getActiveSession(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Authentication required.' });
+    }
+
+    const session = await prisma.session.findFirst({
+      where: { userId, status: { in: ACTIVE_STATUSES } },
+      orderBy: { startedAt: 'desc' },
+      include: { Exercise: true },
+    });
+
+    if (!session) {
+      return res.status(200).json({ session: null });
+    }
+
+    if (Date.now() - session.startedAt.getTime() > STALE_ACTIVE_SESSION_MS) {
+      await prisma.session.update({
+        where: { id: session.id },
+        data: {
+          status: session.status === 'break' ? 'completed' : 'abandoned',
+          completedAt: new Date(),
+          phaseEndsAt: null,
+          pausedRemaining: null,
+        },
+      });
+      return res.status(200).json({ session: null });
+    }
+
+    return res.status(200).json({ session: serializeSession(session) });
+  } catch (error) {
+    console.error('Error fetching active session:', error);
+    return res.status(500).json({ error: 'Failed to fetch active session.' });
   }
 }
 
@@ -342,11 +519,7 @@ export async function getSessionById(req: Request, res: Response) {
     }
 
     return res.status(200).json({
-      session: {
-        ...session,
-        workMinutes: Math.round(session.workDuration / 60),
-        breakMinutes: Math.round(session.breakDuration / 60),
-      },
+      session: serializeSession(session),
     });
   } catch (error) {
     console.error('Error fetching session:', error);
@@ -358,6 +531,11 @@ export async function getSessionById(req: Request, res: Response) {
  * 5. Session Statistics & Analytics
  * GET /api/sessions/stats
  * Provides comprehensive productivity and workout metrics for dashboard.
+ *
+ * `?tzOffset=` is the client's `Date#getTimezoneOffset()` (minutes, UTC minus
+ * local). Range boundaries ("today", "this week") and the hour/day buckets are
+ * computed in that timezone — without it, a server running in UTC would put an
+ * IST user's 9 AM session in the 3 AM bar, and "today" would start at 5:30 AM.
  */
 export async function getSessionStats(req: Request, res: Response) {
   try {
@@ -370,28 +548,41 @@ export async function getSessionStats(req: Request, res: Response) {
     const endDate = typeof req.query.endDate === 'string' ? req.query.endDate : undefined;
     const range = typeof req.query.range === 'string' ? req.query.range : undefined;
 
+    const rawOffset = Number(req.query.tzOffset);
+    const tzOffsetMin =
+      Number.isFinite(rawOffset) && Math.abs(rawOffset) <= 14 * 60
+        ? rawOffset
+        : new Date().getTimezoneOffset();
+    const tzOffsetMs = tzOffsetMin * 60 * 1000;
+    // A Date whose UTC fields read as the user's local wall-clock time.
+    const toLocal = (d: Date) => new Date(d.getTime() - tzOffsetMs);
+    // Converts a "local wall-clock" Date (as produced by toLocal) back to a real instant.
+    const fromLocal = (d: Date) => new Date(d.getTime() + tzOffsetMs);
+
+    const localNow = toLocal(new Date());
+    const localTodayStart = new Date(localNow);
+    localTodayStart.setUTCHours(0, 0, 0, 0);
+
     const where: any = { userId };
 
     // Range filtering
     if (range) {
-      const start = new Date();
+      const start = new Date(localTodayStart);
+      let validRange = true;
       if (range === 'today') {
-        start.setHours(0, 0, 0, 0);
-        where.startedAt = { gte: start };
+        // already local midnight
       } else if (range === 'week') {
-        const day = start.getDay();
-        const diff = start.getDate() - day + (day === 0 ? -6 : 1); // Monday
-        start.setDate(diff);
-        start.setHours(0, 0, 0, 0);
-        where.startedAt = { gte: start };
+        const day = start.getUTCDay();
+        start.setUTCDate(start.getUTCDate() - (day === 0 ? 6 : day - 1)); // Monday
       } else if (range === 'month') {
-        start.setDate(1);
-        start.setHours(0, 0, 0, 0);
-        where.startedAt = { gte: start };
+        start.setUTCDate(1);
       } else if (range === 'year') {
-        start.setMonth(0, 1);
-        start.setHours(0, 0, 0, 0);
-        where.startedAt = { gte: start };
+        start.setUTCMonth(0, 1);
+      } else {
+        validRange = false;
+      }
+      if (validRange) {
+        where.startedAt = { gte: fromLocal(start) };
       }
     } else if (startDate || endDate) {
       where.startedAt = {};
@@ -421,16 +612,17 @@ export async function getSessionStats(req: Request, res: Response) {
     let breakCount = 0;
 
     // 2. Today's Overview
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    const todayStart = fromLocal(localTodayStart);
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
     let todayPomodoros = 0;
     let todayFocusSeconds = 0;
     let todayBreakSeconds = 0;
 
-    // 3. Hourly Distribution (0..23)
+    // 3. Hourly Distribution (0..23). Accumulated in seconds and rounded once
+    // at the end — rounding per session made short (finished-early) sessions
+    // contribute 0 minutes, leaving the chart empty.
+    const hourlySeconds = Array.from({ length: 24 }, () => 0);
     const hourlyCounts = Array.from({ length: 24 }, (_, h) => ({
       hour: h,
       label: `${h}:00`,
@@ -445,14 +637,15 @@ export async function getSessionStats(req: Request, res: Response) {
       dayOfWeek: string;
       dayOfWeekShort: string;
       completedPomodoros: number;
-      focusMinutes: number;
-      breakMinutes: number;
+      focusSeconds: number;
+      breakSeconds: number;
       sessionsCount: number;
     }>();
 
     // 5. Day of Week Breakdown (Mon..Sun)
     const dayNamesShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const dayNamesFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayOfWeekSeconds: Record<string, number> = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
     const dayOfWeekStats: Record<string, { count: number; completedCount: number; focusMinutes: number }> = {
       Mon: { count: 0, completedCount: 0, focusMinutes: 0 },
       Tue: { count: 0, completedCount: 0, focusMinutes: 0 },
@@ -469,9 +662,18 @@ export async function getSessionStats(req: Request, res: Response) {
 
     for (const session of sessions) {
       const sessionDate = new Date(session.startedAt);
+      const localDate = toLocal(sessionDate);
       const isCompleted = session.status === 'completed';
       const isBreakOrCompleted = session.status === 'completed' || session.status === 'break';
-      const isToday = sessionDate >= todayStart && sessionDate <= todayEnd;
+      // The focus phase counts as done once the break has started, whatever
+      // happened afterwards (break still running, cut short, superseded by a
+      // new session on another device). Previously only fully `completed`
+      // sessions counted, so a focus period whose break was never finished
+      // never showed up in the chart.
+      const focusDone = isCompleted || session.breakStartedAt !== null;
+      const focusSeconds = focusDone ? session.workDuration : 0;
+      const breakSeconds = isBreakOrCompleted ? session.breakDuration : 0;
+      const isToday = sessionDate >= todayStart && sessionDate < todayEnd;
 
       // Status counters
       if (session.status === 'completed') completedCount++;
@@ -480,13 +682,8 @@ export async function getSessionStats(req: Request, res: Response) {
       else if (session.status === 'in_progress') inProgressCount++;
       else if (session.status === 'break') breakCount++;
 
-      // Focus time: count work duration for completed sessions (and in-progress work periods)
-      if (isCompleted || session.status === 'break') {
-        totalFocusSeconds += session.workDuration;
-      }
-      if (session.breakStartedAt || isCompleted) {
-        totalBreakSeconds += session.breakDuration;
-      }
+      totalFocusSeconds += focusSeconds;
+      totalBreakSeconds += breakSeconds;
 
       if (session.Exercise && isBreakOrCompleted) {
         totalSessionsWithExercise++;
@@ -495,57 +692,53 @@ export async function getSessionStats(req: Request, res: Response) {
 
       // Today's stats
       if (isToday) {
-        if (isCompleted) {
-          todayPomodoros++;
-          todayFocusSeconds += session.workDuration;
-          todayBreakSeconds += session.breakDuration;
-        } else if (session.status === 'break') {
-          todayFocusSeconds += session.workDuration;
-        }
+        if (focusDone) todayPomodoros++;
+        todayFocusSeconds += focusSeconds;
+        todayBreakSeconds += breakSeconds;
       }
 
-      // Hour of day (0..23)
-      const hour = sessionDate.getHours();
+      // Hour of day (0..23), in the user's timezone
+      const hour = localDate.getUTCHours();
       hourlyCounts[hour].totalSessions++;
-      if (isCompleted) {
-        hourlyCounts[hour].completedPomodoros++;
-        hourlyCounts[hour].focusMinutes += Math.round(session.workDuration / 60);
-      }
+      if (focusDone) hourlyCounts[hour].completedPomodoros++;
+      hourlySeconds[hour] += focusSeconds;
 
       // Day of Week
-      const dayIndex = sessionDate.getDay();
+      const dayIndex = localDate.getUTCDay();
       const shortDay = dayNamesShort[dayIndex];
       if (dayOfWeekStats[shortDay]) {
         dayOfWeekStats[shortDay].count++;
-        if (isCompleted) {
-          dayOfWeekStats[shortDay].completedCount++;
-          dayOfWeekStats[shortDay].focusMinutes += Math.round(session.workDuration / 60);
-        }
+        if (focusDone) dayOfWeekStats[shortDay].completedCount++;
+        dayOfWeekSeconds[shortDay] += focusSeconds;
       }
 
-      // By Day (YYYY-MM-DD)
-      const dateKey = sessionDate.toISOString().split('T')[0];
+      // By Day (YYYY-MM-DD, local)
+      const dateKey = localDate.toISOString().split('T')[0];
       const existingDaily = dailyMap.get(dateKey);
-      const dayFull = dayNamesFull[dayIndex];
-      const workMin = isCompleted ? Math.round(session.workDuration / 60) : 0;
-      const breakMin = isBreakOrCompleted ? Math.round(session.breakDuration / 60) : 0;
 
       if (existingDaily) {
         existingDaily.sessionsCount++;
-        if (isCompleted) existingDaily.completedPomodoros++;
-        existingDaily.focusMinutes += workMin;
-        existingDaily.breakMinutes += breakMin;
+        if (focusDone) existingDaily.completedPomodoros++;
+        existingDaily.focusSeconds += focusSeconds;
+        existingDaily.breakSeconds += breakSeconds;
       } else {
         dailyMap.set(dateKey, {
           date: dateKey,
-          dayOfWeek: dayFull,
+          dayOfWeek: dayNamesFull[dayIndex],
           dayOfWeekShort: shortDay,
-          completedPomodoros: isCompleted ? 1 : 0,
-          focusMinutes: workMin,
-          breakMinutes: breakMin,
+          completedPomodoros: focusDone ? 1 : 0,
+          focusSeconds,
+          breakSeconds,
           sessionsCount: 1,
         });
       }
+    }
+
+    hourlyCounts.forEach((h, i) => {
+      h.focusMinutes = Math.round(hourlySeconds[i] / 60);
+    });
+    for (const day of Object.keys(dayOfWeekStats)) {
+      dayOfWeekStats[day].focusMinutes = Math.round(dayOfWeekSeconds[day] / 60);
     }
 
     const totalFocusMinutes = Math.round(totalFocusSeconds / 60);
@@ -556,8 +749,12 @@ export async function getSessionStats(req: Request, res: Response) {
     const todayFocusMinutes = Math.round(todayFocusSeconds / 60);
     const todayBreakMinutes = Math.round(todayBreakSeconds / 60);
 
+    const byDay = Array.from(dailyMap.values()).map(({ focusSeconds, breakSeconds, ...d }) => ({
+      ...d,
+      focusMinutes: Math.round(focusSeconds / 60),
+      breakMinutes: Math.round(breakSeconds / 60),
+    }));
     // Heatmap array format: [{ date: '2026-08-19', count: 6, intensity: 3 }]
-    const byDay = Array.from(dailyMap.values());
     const heatmap = byDay.map((d) => {
       let intensity = 0;
       if (d.completedPomodoros >= 8) intensity = 4;

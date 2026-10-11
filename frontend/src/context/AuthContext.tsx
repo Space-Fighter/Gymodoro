@@ -24,6 +24,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // httpOnly refresh cookie below.
   const accessTokenRef = useRef<string | null>(null);
   const getAccessToken = useCallback(() => accessTokenRef.current, []);
+  // Single in-flight refresh shared by every caller in this tab. Refresh
+  // tokens rotate and a reused one revokes *all* the user's sessions, so two
+  // concurrent refreshes would log the user out.
+  const refreshInFlightRef = useRef<Promise<string | null> | null>(null);
+
+  // Mints a new access token from the httpOnly refresh cookie. The Web Lock
+  // also serializes refreshes across tabs, which share the same cookie.
+  const refreshAccessToken = useCallback((): Promise<string | null> => {
+    if (refreshInFlightRef.current) return refreshInFlightRef.current;
+    const doRefresh = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/auth/refresh-token`, {
+          method: "POST",
+          credentials: "include",
+        });
+        if (!response.ok) return null;
+        const data = await response.json();
+        accessTokenRef.current = data.accessToken ?? null;
+        return accessTokenRef.current;
+      } catch {
+        return null;
+      }
+    };
+    const promise = (
+      typeof navigator !== "undefined" && navigator.locks
+        ? navigator.locks.request("gymodoro-token-refresh", doRefresh)
+        : doRefresh()
+    ).finally(() => {
+      refreshInFlightRef.current = null;
+    });
+    refreshInFlightRef.current = promise;
+    return promise;
+  }, []);
+
+  // fetch() against the API with the Bearer token attached. The access token
+  // only lives 15 minutes — shorter than a focus period — so on a 401 this
+  // refreshes once and retries instead of silently failing.
+  const authFetch = useCallback(
+    async (path: string, init?: RequestInit): Promise<Response> => {
+      const send = (token: string | null) =>
+        fetch(`${API_URL}${path}`, {
+          ...init,
+          credentials: "include",
+          headers: {
+            ...(init?.body ? { "Content-Type": "application/json" } : {}),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...init?.headers,
+          },
+        });
+      const token = accessTokenRef.current ?? (await refreshAccessToken());
+      const response = await send(token);
+      if (response.status !== 401) return response;
+      const fresh = await refreshAccessToken();
+      return fresh ? send(fresh) : response;
+    },
+    [refreshAccessToken]
+  );
   // StrictMode double-invokes the mount effect below in dev, firing two
   // concurrent checkAuth() calls; without this guard the second (redundant)
   // refresh-token round trip can lose the race and null out a token the
@@ -49,21 +106,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // No access token in memory (fresh load / navigation) — try to mint
       // one from the httpOnly refresh cookie before giving up.
-      const refreshResponse = await fetch(`${API_URL}/api/auth/refresh-token`, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!refreshResponse.ok) {
+      const token = await refreshAccessToken();
+      if (!token) {
         accessTokenRef.current = null;
         setUser(null);
         return;
       }
 
-      const refreshData = await refreshResponse.json();
-      accessTokenRef.current = refreshData.accessToken;
-
-      const me = await fetchMe(refreshData.accessToken);
+      const me = await fetchMe(token);
       setUser(me);
     } catch (err) {
       console.error("Auth check failed:", err);
@@ -74,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       checkAuthInFlightRef.current = false;
     }
-  }, [fetchMe]);
+  }, [fetchMe, refreshAccessToken]);
 
   const login = useCallback(async (email: string, password: string) => {
     try {
@@ -307,6 +357,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         deleteAccount,
         checkAuth,
         getAccessToken,
+        authFetch,
       }}
     >
       {children}

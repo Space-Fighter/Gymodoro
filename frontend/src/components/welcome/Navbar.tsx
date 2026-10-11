@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import logo from "@/assets/brand/gymodoro-logo.png";
+import { useAuth } from "@/hooks/useAuth";
 import { useLiquidGlass } from "@/hooks/useLiquidGlass";
 import { GLASS_WELCOME_BAR } from "@/lib/glassPresets";
 
@@ -14,6 +15,10 @@ const LINKS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const glassRef = useLiquidGlass<HTMLElement>(GLASS_WELCOME_BAR);
+  const { isAuthenticated } = useAuth();
+  // Section anchors live on the landing page; from the blog they need the "/" prefix.
+  const onHome = useLocation().pathname === "/";
+  const home = onHome ? "" : "/";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 48);
@@ -33,7 +38,7 @@ export default function Navbar() {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <a
-          href="#top"
+          href={onHome ? "#top" : "/"}
           aria-label="Gymodoro Home"
           className="flex items-center gap-2 text-white [text-shadow:0_1px_8px_rgba(0,0,0,0.45)]"
         >
@@ -45,28 +50,46 @@ export default function Navbar() {
           {LINKS.map((l) => (
             <a
               key={l.href}
-              href={l.href}
+              href={`${home}${l.href}`}
               className="transition-colors hover:text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]"
             >
               {l.label}
             </a>
           ))}
+          <Link
+            to="/blog"
+            className="transition-colors hover:text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]"
+          >
+            Blog
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            to="/signin"
-            className="rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap text-white/90 max-md:px-3 transition md:hover:text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]"
-          >
-            Sign in
-          </Link>
-          <Link
-            to="/signup"
-            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm whitespace-nowrap max-md:px-3.5 font-bold text-slate-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-white/90"
-          >
-            Start focusing
-            <span className="text-emerald-500 max-[480px]:hidden">↗</span>
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm whitespace-nowrap max-md:px-3.5 font-bold text-slate-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-white/90"
+            >
+              Open timer
+              <span className="text-emerald-500 max-[480px]:hidden">↗</span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/signin"
+                className="rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap text-white/90 max-md:px-3 transition md:hover:text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]"
+              >
+                Sign in
+              </Link>
+              <Link
+                to="/signup"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm whitespace-nowrap max-md:px-3.5 font-bold text-slate-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-white/90"
+              >
+                Start focusing
+                <span className="text-emerald-500 max-[480px]:hidden">↗</span>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

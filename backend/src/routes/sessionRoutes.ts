@@ -7,6 +7,7 @@ import {
   getSessions,
   getSessionById,
   getSessionStats,
+  getActiveSession,
 } from '../controllers/sessionControllers.js';
 
 const router = Router();
@@ -16,6 +17,9 @@ router.use(authenticate);
 
 // 1. Session statistics (must precede /:id)
 router.get('/stats', getSessionStats);
+
+// Unfinished session to resume on any device (must precede /:id)
+router.get('/active', getActiveSession);
 
 // 2. Start a new Pomodoro session
 router.post('/', createSession);

@@ -97,3 +97,17 @@ export interface SessionStatsResponse {
 }
 
 export type StatsRange = "today" | "week" | "month";
+
+// GET /api/sessions/active — the unfinished session to resume, if any.
+// `remainingSeconds` is computed server-side (clock-skew safe); 0 while
+// `running` means the phase ended while the user was away.
+export interface ActiveSession {
+  id: string;
+  status: SessionStatus;
+  workDuration: number;
+  breakDuration: number;
+  breakMode: "short" | "long" | null;
+  exerciseId: string | null;
+  running: boolean;
+  remainingSeconds: number;
+}

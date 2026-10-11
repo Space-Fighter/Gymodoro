@@ -2,10 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import type { SessionStatsResponse, StatsRange } from "@/types/session";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
 export function useSessionStats(range: StatsRange) {
-  const { getAccessToken } = useAuth();
+  const { authFetch } = useAuth();
   const [stats, setStats] = useState<SessionStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,20 +13,16 @@ export function useSessionStats(range: StatsRange) {
   const requestIdRef = useRef(0);
 
   const fetchStats = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
     const requestId = ++requestIdRef.current;
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${API_URL}/api/sessions/stats?range=${range}`, {
-        credentials: "include",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // tzOffset lets the server bucket hours / "today" in the user's own
+      // timezone rather than the server's (UTC in production).
+      const tzOffset = new Date().getTimezoneOffset();
+      const response = await authFetch(
+        `/api/sessions/stats?range=${range}&tzOffset=${tzOffset}`
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch session stats");
       }
@@ -42,7 +36,7 @@ export function useSessionStats(range: StatsRange) {
     } finally {
       if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, [range, getAccessToken]);
+  }, [range, authFetch]);
 
   useEffect(() => {
     // Legitimate external-system sync (network fetch), not derived state.

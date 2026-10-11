@@ -6,6 +6,8 @@ import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Timer from "./pages/Timer";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthProvider } from "@/context/AuthContext";
 
@@ -21,6 +23,9 @@ function App() {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            {/* Blog: also prerendered to static HTML at build time (scripts/prerender-blog.ts) */}
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
 
             {/* Protected routes */}
             <Route
